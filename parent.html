@@ -129,7 +129,7 @@
 
       // Load homework & completion status
       const [{ data: hw, error: homeworkError }, { data: updates, error: updatesError }] = await Promise.all([
-        supabaseClient.from('assignments').select('*').or(`target_code.eq.ALL,target_code.eq.${code}`).order('due_date', { ascending: true }),
+        supabaseClient.from('assignments').select('*').order('due_date', { ascending: true }),
         supabaseClient.from('student_updates')
           .select('assignment_id,status,updated_at')
           .eq('student_code', code)
@@ -144,11 +144,17 @@
       const hwContainer = document.getElementById('pHomeworkList');
       if (homeworkError || updatesError) {
         hwContainer.textContent = 'Could not load homework status. Please try again later.';
-      } else if (!hw || hw.length === 0) {
-        hwContainer.innerHTML = '<p style="color:var(--text-secondary);">No homework assigned right now.</p>';
       } else {
-        hwContainer.innerHTML = '';
-        hw.forEach(item => {
+        const visibleHomework = (hw || []).filter(item =>
+          item.target_code === 'ALL' ||
+          item.target_code === code ||
+          (data.class_name && item.target_code === 'CLASS:' + data.class_name)
+        );
+        if (!visibleHomework.length) {
+          hwContainer.innerHTML = '<p style="color:var(--text-secondary);">No homework assigned right now.</p>';
+        } else {
+          hwContainer.innerHTML = '';
+          visibleHomework.forEach(item => {
           const isDone = latestStatus.get(item.id) === 'Completed';
           const div = document.createElement('div');
           div.className = 'hw-row';
@@ -159,7 +165,8 @@
             <span style="font-size:0.8rem; font-weight:700; color:${isDone ? '#10b981' : '#f59e0b'};">${isDone ? '✅ Completed' : '⏳ Pending'}</span>
           `;
           hwContainer.appendChild(div);
-        });
+          });
+        }
       }
 
       document.getElementById('parentReportCard').style.display = 'block';
