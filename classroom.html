@@ -109,6 +109,10 @@
         container.textContent = 'Cloud classroom is not configured yet. Add your Supabase project URL in supabase.js to enable assignments.';
         return;
       }
+      if (!supabaseClient) {
+        container.textContent = 'Cloud classroom is not configured yet. Add your Supabase project URL in supabase.js to enable assignments.';
+        return;
+      }
       
       const { data, error } = await supabaseClient
         .from('assignments')
