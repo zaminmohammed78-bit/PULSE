@@ -130,7 +130,7 @@
     });
 
     const PROFILE_KEY='auraway_profile_name';
-    const DATA_KEYS=['auraway_tasks','auraway_focus_stats','auraway_assignments','auraway_water','auraway_attendance','auraway_exams','auraway_marks','auraway_notes','auraway_flashcards','auraway_student_code','auraway_habits','auraway_tt_subjects','auraway_tt_schedule',PROFILE_KEY,'auraway_theme'];
+    const DATA_KEYS=['auraway_tasks','auraway_focus_stats','auraway_assignments','auraway_water','auraway_attendance','auraway_exams','auraway_marks','auraway_notes','auraway_flashcards','auraway_student_code','auraway_habits','auraway_study_days','auraway_dashboard_prefs','auraway_tt_subjects','auraway_tt_schedule',PROFILE_KEY,'auraway_theme'];
     document.getElementById('profileNameInput').value=localStorage.getItem(PROFILE_KEY)||'Student';
     window.saveProfile=function(){const name=document.getElementById('profileNameInput').value.trim();if(!name){alert('Please enter a student name.');return}localStorage.setItem(PROFILE_KEY,name);alert('Profile name saved.')};
     window.exportData=function(){const data={};DATA_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)data[k]=v});const blob=new Blob([JSON.stringify({app:'AURAWAY',version:1,exportedAt:new Date().toISOString(),data},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='auraway-backup.json';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url)};
