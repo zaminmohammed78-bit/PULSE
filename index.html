@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURAWAY — Student Productivity Dashboard</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app-container">
@@ -91,7 +91,8 @@
 
     const hour = now.getHours();
     const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-    document.getElementById('greetingText').textContent = `${greeting}, Student! 👋`;
+    const profileName = localStorage.getItem('auraway_profile_name') || 'Student';
+    document.getElementById('greetingText').textContent = `${greeting}, ${profileName}! 👋`;
 
     // Load Real Data from LocalStorage
     const tasks = JSON.parse(localStorage.getItem('auraway_tasks')) || [];
