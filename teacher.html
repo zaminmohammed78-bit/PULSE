@@ -113,6 +113,8 @@
       document.getElementById('teacherLoginPanel').style.display = 'none';
       document.getElementById('teacherPortalContent').style.display = 'block';
       document.getElementById('teacherPortalHeading').textContent = 'AURAWAY — ' + name;
+      loadStudentsRoster();
+      loadStudentActivity();
     }
 
     document.getElementById('teacherLoginForm').addEventListener('submit', async (event) => {
@@ -308,8 +310,6 @@
       e.target.reset();
     });
 
-    loadStudentsRoster();
-    loadStudentActivity();
   </script>
 </body>
 </html>
