@@ -171,4 +171,5 @@
     window.clearTimetable=function(){weeklySchedule={};localStorage.removeItem('auraway_tt_schedule');renderTimetable()};
     function renderTimetable(){const grid=document.getElementById('weekGrid');grid.replaceChildren();const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];if(!Object.keys(weeklySchedule).length){const p=document.createElement('p');p.textContent='No timetable generated yet. Configure your subjects above and tap "Generate Weekly Timetable".';grid.append(p);return}days.forEach(day=>{const card=document.createElement('div');card.className='day-card';const heading=document.createElement('h4');heading.textContent=day;card.append(heading);(weeklySchedule[day]||[]).forEach(slot=>{const item=document.createElement('div');item.className='slot-item '+(slot.type==='break'?'slot-break':'');const time=document.createElement('strong');time.textContent=slot.time;const title=document.createElement('div');title.textContent=slot.title;item.append(time,title);card.append(item)});grid.append(card)})}
     renderSubjects();renderTimetable();
-  </script></body></html>
+  </script>  <script src="navigation.js" defer></script>
+</body></html>
