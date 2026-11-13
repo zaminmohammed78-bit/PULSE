@@ -21,12 +21,15 @@
     <div class="card">
       <h1>AURAWAY — Teacher Sign In 👩‍🏫</h1>
       <p style="color:var(--text-secondary);margin:8px 0 16px;">Enter your teacher access code and name to continue.</p>
-      <form id="teacherLoginForm" class="portal-form">
+      <div class="portal-form" id="teacherLoginForm">
         <input id="teacherDisplayName" class="input-field" type="text" placeholder="Your teacher name" autocomplete="name" required>
         <input id="teacherAccessCode" class="input-field" type="password" placeholder="Teacher access code" autocomplete="current-password" required>
-        <button class="btn" id="teacherLoginButton" type="submit">Sign in</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="btn" id="teacherLoginButton" type="button">Sign in</button>
+          <button class="btn" id="teacherSignupButton" type="button" style="background:#0f766e;">Sign up</button>
+        </div>
         <p id="teacherLoginError" role="alert" style="color:#ef4444;"></p>
-      </form>
+      </div>
     </div>
   </section>
   <div class="standalone-wrap" id="teacherPortalContent" style="display:none;">
@@ -102,14 +105,10 @@
   </div>
 
   <script>
-    const TEACHER_LOGIN_EMAIL = 'teacher@auraway.app';
+    const TEACHER_AUTH_FUNCTION_URL = 'https://iazlemocpuhzwtrkyfgw.supabase.co/functions/v1/teacher-access';
 
-    async function showTeacherPortal(session, enteredName) {
-      const name = enteredName || session.user.user_metadata?.display_name || 'Teacher';
-      if (enteredName && enteredName !== session.user.user_metadata?.display_name) {
-        const { error } = await supabaseClient.auth.updateUser({ data: { display_name: enteredName } });
-        if (error) console.warn('Could not save teacher display name:', error.message);
-      }
+    async function showTeacherPortal(session) {
+      const name = session.user.user_metadata?.display_name || 'Teacher';
       document.getElementById('teacherLoginPanel').style.display = 'none';
       document.getElementById('teacherPortalContent').style.display = 'block';
       document.getElementById('teacherPortalHeading').textContent = 'AURAWAY — ' + name;
@@ -117,32 +116,46 @@
       loadStudentActivity();
     }
 
-    document.getElementById('teacherLoginForm').addEventListener('submit', async (event) => {
+    async function requestTeacherAccess(action, event) {
       event.preventDefault();
       const name = document.getElementById('teacherDisplayName').value.trim();
       const code = document.getElementById('teacherAccessCode').value;
       const button = document.getElementById('teacherLoginButton');
       const errorBox = document.getElementById('teacherLoginError');
-      if (!supabaseClient) {
-        errorBox.textContent = 'Login service is not configured.';
+      if (!supabaseClient || !name || !code) {
+        errorBox.textContent = 'Enter your first name and teacher access code.';
         return;
       }
       button.disabled = true;
-      button.textContent = 'Verifying…';
+      button.textContent = action === 'signup' ? 'Creating account…' : 'Signing in…';
       errorBox.textContent = '';
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: TEACHER_LOGIN_EMAIL,
-        password: code
-      });
-      button.disabled = false;
-      button.textContent = 'Sign in';
-      if (error || !data.session) {
-        errorBox.textContent = 'Teacher sign-in failed. Check your code or ask the administrator to configure the teacher account.';
-        return;
+      try {
+        const response = await fetch(TEACHER_AUTH_FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify({ action, first_name: name, access_code: code })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.token_hash) {
+          throw new Error(result.error || 'Teacher access could not be verified.');
+        }
+        const { data, error } = await supabaseClient.auth.verifyOtp({
+          token_hash: result.token_hash,
+          type: 'magiclink'
+        });
+        if (error || !data.session) throw new Error('Could not create a secure teacher session. Please try again.');
+        document.getElementById('teacherAccessCode').value = '';
+        await showTeacherPortal(data.session);
+      } catch (error) {
+        errorBox.textContent = error.message || 'Teacher sign-in failed. Please try again.';
+      } finally {
+        button.disabled = false;
+        button.textContent = action === 'signup' ? 'Create teacher account' : 'Sign in';
       }
-      document.getElementById('teacherAccessCode').value = '';
-      await showTeacherPortal(data.session, name);
-    });
+    }
+
+    document.getElementById('teacherSignupButton').addEventListener('click', (event) => requestTeacherAccess('signup', event));
+    document.getElementById('teacherLoginButton').addEventListener('click', (event) => requestTeacherAccess('signin', event));
 
     document.getElementById('teacherSignOut').addEventListener('click', async () => {
       await supabaseClient.auth.signOut();
