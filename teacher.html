@@ -17,11 +17,24 @@
   </style>
 </head>
 <body>
-  <div class="standalone-wrap">
+  <section id="teacherLoginPanel" class="standalone-wrap" style="max-width:440px;">
+    <div class="card">
+      <h1>AURAWAY — Teacher Sign In 👩‍🏫</h1>
+      <p style="color:var(--text-secondary);margin:8px 0 16px;">Enter your teacher access code and name to continue.</p>
+      <form id="teacherLoginForm" class="portal-form">
+        <input id="teacherDisplayName" class="input-field" type="text" placeholder="Your teacher name" autocomplete="name" required>
+        <input id="teacherAccessCode" class="input-field" type="password" placeholder="Teacher access code" autocomplete="current-password" required>
+        <button class="btn" id="teacherLoginButton" type="submit">Sign in</button>
+        <p id="teacherLoginError" role="alert" style="color:#ef4444;"></p>
+      </form>
+    </div>
+  </section>
+  <div class="standalone-wrap" id="teacherPortalContent" style="display:none;">
     <div class="header-bar" style="margin-bottom: 24px;">
       <div class="welcome-title">
-        <h1>AURAWAY — Teacher Portal 👩‍🏫</h1>
+        <h1 id="teacherPortalHeading">AURAWAY — Teacher Portal 👩‍🏫</h1>
         <p>Generate student login codes, manage profiles, assign homework, and view student activity.</p>
+        <button class="btn" id="teacherSignOut" style="background:#64748b;">Sign out</button>
       </div>
       <button class="btn" id="themeToggle">Theme</button>
     </div>
@@ -89,6 +102,60 @@
   </div>
 
   <script>
+    const TEACHER_LOGIN_EMAIL = 'teacher@auraway.app';
+
+    async function showTeacherPortal(session, enteredName) {
+      const name = enteredName || session.user.user_metadata?.display_name || 'Teacher';
+      if (enteredName && enteredName !== session.user.user_metadata?.display_name) {
+        const { error } = await supabaseClient.auth.updateUser({ data: { display_name: enteredName } });
+        if (error) console.warn('Could not save teacher display name:', error.message);
+      }
+      document.getElementById('teacherLoginPanel').style.display = 'none';
+      document.getElementById('teacherPortalContent').style.display = 'block';
+      document.getElementById('teacherPortalHeading').textContent = 'AURAWAY — ' + name;
+    }
+
+    document.getElementById('teacherLoginForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const name = document.getElementById('teacherDisplayName').value.trim();
+      const code = document.getElementById('teacherAccessCode').value;
+      const button = document.getElementById('teacherLoginButton');
+      const errorBox = document.getElementById('teacherLoginError');
+      if (!supabaseClient) {
+        errorBox.textContent = 'Login service is not configured.';
+        return;
+      }
+      button.disabled = true;
+      button.textContent = 'Verifying…';
+      errorBox.textContent = '';
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: TEACHER_LOGIN_EMAIL,
+        password: code
+      });
+      button.disabled = false;
+      button.textContent = 'Sign in';
+      if (error || !data.session) {
+        errorBox.textContent = 'Teacher sign-in failed. Check your code or ask the administrator to configure the teacher account.';
+        return;
+      }
+      document.getElementById('teacherAccessCode').value = '';
+      await showTeacherPortal(data.session, name);
+    });
+
+    document.getElementById('teacherSignOut').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.reload();
+    });
+
+    (async function initializeTeacherAuth() {
+      if (!supabaseClient) {
+        document.getElementById('teacherLoginError').textContent = 'Supabase is not configured.';
+        return;
+      }
+      const { data } = await supabaseClient.auth.getSession();
+      if (data.session) await showTeacherPortal(data.session);
+    })();
+
     const html = document.documentElement;
     html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
     document.getElementById('themeToggle').addEventListener('click', () => {
