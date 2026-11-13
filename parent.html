@@ -128,19 +128,28 @@
       }
 
       // Load homework & completion status
-      const [{ data: hw }, { data: done }] = await Promise.all([
+      const [{ data: hw, error: homeworkError }, { data: updates, error: updatesError }] = await Promise.all([
         supabaseClient.from('assignments').select('*').or(`target_code.eq.ALL,target_code.eq.${code}`).order('due_date', { ascending: true }),
-        supabaseClient.from('student_updates').select('assignment_id').eq('student_code', code).eq('status', 'Completed')
+        supabaseClient.from('student_updates')
+          .select('assignment_id,status,updated_at')
+          .eq('student_code', code)
+          .in('status', ['Completed', 'Not Completed'])
+          .order('updated_at', { ascending: false })
       ]);
 
-      const doneIds = new Set((done || []).map(d => d.assignment_id));
+      const latestStatus = new Map();
+      (updates || []).forEach(update => {
+        if (!latestStatus.has(update.assignment_id)) latestStatus.set(update.assignment_id, update.status);
+      });
       const hwContainer = document.getElementById('pHomeworkList');
-      if (!hw || hw.length === 0) {
+      if (homeworkError || updatesError) {
+        hwContainer.textContent = 'Could not load homework status. Please try again later.';
+      } else if (!hw || hw.length === 0) {
         hwContainer.innerHTML = '<p style="color:var(--text-secondary);">No homework assigned right now.</p>';
       } else {
         hwContainer.innerHTML = '';
         hw.forEach(item => {
-          const isDone = doneIds.has(item.id);
+          const isDone = latestStatus.get(item.id) === 'Completed';
           const div = document.createElement('div');
           div.className = 'hw-row';
           div.innerHTML = `
