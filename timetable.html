@@ -72,22 +72,11 @@
 </head>
 <body>
   <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button><div class="menu-backdrop" id="menuBackdrop" hidden></div>
     <!-- Navigation Sidebar -->
-    <sidebar>
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
       <div class="logo-area">AURAWAY</div>
-      <ul class="nav-links">
-        <li><a href="index.html">📊 Dashboard</a></li>
-        <li><a href="planner.html">📅 Study Planner</a></li>
-        <li><a href="timetable.html" class="active">🗓️ Timetable</a></li>
-        <li><a href="exam.html">🎯 Exams</a></li>
-        <li><a href="flashcards.html">🗂️ Flashcards</a></li>
-        <li><a href="classroom.html">🎓 Classroom</a></li>
-        <li><a href="focus.html">⏱️ Focus Centre</a></li>
-        <li><a href="notes.html">📝 Digital Notes</a></li>
-        <li><a href="wellness.html">🌱 Wellness</a></li>
-        <li><a href="progress.html">🏆 Progress</a></li>
-        <li><a href="settings.html">⚙️ Settings</a></li>
-      </ul>
+      <ul class="nav-links" id="aurawayNavLinks"><li><a href="index.html">📊 Dashboard</a></li><li><a href="planner.html">📅 Study Planner</a></li><li><a href="timetable.html">🗓️ Timetable</a></li><li><a href="exam.html">🎯 Exams</a></li><li><a href="marks.html">📈 Marks Manager</a></li><li><a href="attendance.html">📋 Attendance</a></li><li><a href="flashcards.html">🗂️ Flashcards</a></li><li><a href="classroom.html">🎓 Classroom</a></li><li><a href="focus.html">⏱️ Focus Centre</a></li><li><a href="notes.html">📝 Digital Notes</a></li><li><a href="wellness.html">🌱 Wellness</a></li><li><a href="progress.html">🏆 Progress</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="settings.html">⚙️ Settings</a></li></ul>
       <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
     </sidebar>
 
