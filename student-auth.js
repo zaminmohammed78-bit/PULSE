@@ -59,7 +59,8 @@ function setActiveStudent(student) {
   const family = readFamilyStudents().filter(item => item.code !== savedCode);
   family.unshift({ code: savedCode, profile: data });
   saveFamilyStudents(family);
-  document.addEventListener('DOMContentLoaded', addStudentAccountControls, { once: true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addStudentAccountControls, { once: true });
+  else addStudentAccountControls();
 })();
 
 function showStudentLoginGate(customMsg = '') {
