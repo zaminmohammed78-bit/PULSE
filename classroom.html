@@ -105,7 +105,7 @@
       }
 
       const [{ data: hwData, error: homeworkError }, { data: doneData, error: statusError }] = await Promise.all([
-        supabaseClient.from('assignments').select('*').or(`target_code.eq.ALL,target_code.eq.${code}`).order('due_date', { ascending: true }),
+        supabaseClient.from('assignments').select('*').order('due_date', { ascending: true }),
         supabaseClient.from('student_updates')
           .select('assignment_id,status,updated_at')
           .eq('student_code', code)
@@ -119,7 +119,11 @@
         return;
       }
 
-      currentAssignments = hwData || [];
+      currentAssignments = (hwData || []).filter(item =>
+        item.target_code === 'ALL' ||
+        item.target_code === code ||
+        (currentStudent?.class_name && item.target_code === 'CLASS:' + currentStudent.class_name)
+      );
       const latestStatus = new Map();
       (doneData || []).forEach(update => {
         if (!latestStatus.has(update.assignment_id)) latestStatus.set(update.assignment_id, update.status);
