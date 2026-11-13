@@ -94,7 +94,10 @@
 
     const hour = now.getHours();
     const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-    const profileName = localStorage.getItem('auraway_profile_name') || 'Student';
+    const studentProfile = JSON.parse(
+      localStorage.getItem('auraway_student_profile') || 'null'
+    );
+    const profileName = studentProfile?.student_name || 'Student';
     document.getElementById('greetingText').textContent = `${greeting}, ${profileName}! 👋`;
 
     // Load Real Data from LocalStorage
