@@ -1,4 +1,6 @@
 -- AURAWAY shared teacher-managed attendance
+-- Only the internal teacher@auraway.app Supabase Auth identity may write or read
+-- the table directly. Students and parents use the read-only code lookup RPC.
 -- Run this once in Supabase SQL Editor for the project configured in supabase.js.
 
 create table if not exists public.attendance_records (
@@ -18,8 +20,8 @@ create policy "Teachers manage attendance records"
 on public.attendance_records
 for all
 to authenticated
-using (auth.uid() is not null)
-with check (auth.uid() is not null);
+using ((auth.jwt() ->> 'email') = 'teacher@auraway.app')
+with check ((auth.jwt() ->> 'email') = 'teacher@auraway.app');
 
 -- Students/parents use the teacher-issued student code as their lookup credential.
 -- This function returns only records matching that exact code; the table itself
