@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AURAWAY — Teacher Portal</title>
+  <title>PULSE — Teacher Portal</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
@@ -20,7 +20,7 @@
 <body>
   <section id="teacherLoginPanel" class="standalone-wrap" style="max-width:440px;">
     <div class="card">
-      <h1>AURAWAY — Teacher Sign In 👩‍🏫</h1>
+      <h1>PULSE — Teacher Sign In 👩‍🏫</h1>
       <p style="color:var(--text-secondary);margin:8px 0 16px;">Enter your teacher access code and name to continue.</p>
       <div class="portal-form" id="teacherLoginForm">
         <input id="teacherDisplayName" class="input-field" type="text" placeholder="Your teacher name" autocomplete="name" required>
@@ -36,7 +36,7 @@
   <div class="standalone-wrap" id="teacherPortalContent" style="display:none;">
     <div class="header-bar" style="margin-bottom: 24px;">
       <div class="welcome-title">
-        <h1 id="teacherPortalHeading">AURAWAY — Teacher Portal 👩‍🏫</h1>
+        <h1 id="teacherPortalHeading">PULSE — Teacher Portal 👩‍🏫</h1>
         <p>Generate student login codes, manage profiles, assign homework, and view student activity.</p>
         <button class="btn" id="teacherSignOut" style="background:#64748b;">Sign out</button>
       </div>
@@ -166,7 +166,7 @@
       const name = session.user.user_metadata?.display_name || 'Teacher';
       document.getElementById('teacherLoginPanel').style.display = 'none';
       document.getElementById('teacherPortalContent').style.display = 'block';
-      document.getElementById('teacherPortalHeading').textContent = 'AURAWAY — ' + name;
+      document.getElementById('teacherPortalHeading').textContent = 'PULSE — ' + name;
       await loadStudentsRoster();
       loadStudentActivity();
       loadAssignmentOverview();
