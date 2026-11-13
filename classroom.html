@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURAWAY — Student Classroom</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
+  <script src="supabase.js"></script>
   <style>
     .classroom-card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
     .code-prompt { max-width: 450px; margin: 40px auto; text-align: center; background: var(--bg-primary); border: 1px solid var(--border-color); padding: 30px; border-radius: var(--radius); }
@@ -105,6 +105,10 @@
     // Fetch Assignments from Supabase matching 'ALL' or student's specific code
     async function fetchCloudAssignments(code) {
       const container = document.getElementById('assignmentsList');
+      if (!supabaseClient) {
+        container.textContent = 'Cloud classroom is not configured yet. Add your Supabase project URL in supabase.js to enable assignments.';
+        return;
+      }
       
       const { data, error } = await supabaseClient
         .from('assignments')
@@ -126,13 +130,18 @@
       data.forEach(item => {
         const div = document.createElement('div');
         div.className = 'classroom-card';
-        div.innerHTML = `
-          <div>
-            <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 700;">${item.subject} &bull; Due: ${item.due_date}</span>
-            <h4 style="font-size: 1.05rem; margin-top: 2px;">${item.title}</h4>
-          </div>
-          <span style="font-size: 0.8rem; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.15); padding: 4px 10px; border-radius: 6px;">${item.status}</span>
-        `;
+        const details = document.createElement('div');
+        const meta = document.createElement('span');
+        meta.style.cssText = 'font-size: 0.75rem; color: var(--accent-primary); font-weight: 700;';
+        meta.textContent = `${item.subject || 'General'} • Due: ${item.due_date || 'Not set'}`;
+        const title = document.createElement('h4');
+        title.style.cssText = 'font-size: 1.05rem; margin-top: 2px;';
+        title.textContent = item.title || 'Untitled assignment';
+        const status = document.createElement('span');
+        status.style.cssText = 'font-size: 0.8rem; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.15); padding: 4px 10px; border-radius: 6px;';
+        status.textContent = item.status || 'Pending';
+        details.append(meta, title);
+        div.append(details, status);
         container.appendChild(div);
       });
     }
