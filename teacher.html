@@ -106,7 +106,7 @@
     </div>
 
     <!-- Assign Homework -->
-    <div class="card">
+    <div class="card" style="margin-bottom:20px;">
       <h3>📚 Assign Homework</h3>
       <form id="assignHwForm" class="portal-form">
         <input type="text" id="hwTitle" class="input-field" placeholder="Homework Title" required>
@@ -115,6 +115,16 @@
         <input type="text" id="hwTarget" class="input-field" placeholder="Target Student Code or 'ALL'" value="ALL">
         <button type="submit" class="btn">Publish Homework</button>
       </form>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <h3>📊 Assignment Completion Status</h3>
+        <button type="button" class="btn" id="refreshAssignmentStatus" style="padding:6px 12px;">Refresh Status</button>
+      </div>
+      <div id="teacherAssignmentOverview" style="margin-top:12px;">
+        <p style="color:var(--text-secondary);">Loading assignment status...</p>
+      </div>
     </div>
   </div>
 
@@ -126,8 +136,9 @@
       document.getElementById('teacherLoginPanel').style.display = 'none';
       document.getElementById('teacherPortalContent').style.display = 'block';
       document.getElementById('teacherPortalHeading').textContent = 'AURAWAY — ' + name;
-      loadStudentsRoster();
+      await loadStudentsRoster();
       loadStudentActivity();
+      loadAssignmentOverview();
     }
 
     async function requestTeacherAccess(action, event) {
@@ -335,6 +346,72 @@
     document.getElementById('loadAttendanceClass').addEventListener('click', loadAttendanceRoster);
     document.getElementById('saveClassAttendance').addEventListener('click', saveClassAttendance);
 
+    async function loadAssignmentOverview() {
+      const container = document.getElementById('teacherAssignmentOverview');
+      const [{ data: assignments, error: assignmentError }, { data: updates, error: updatesError }] = await Promise.all([
+        supabaseClient.from('assignments').select('*').order('due_date', { ascending: true }),
+        supabaseClient.from('student_updates')
+          .select('assignment_id,student_code,status,updated_at')
+          .in('status', ['Completed', 'Not Completed'])
+          .order('updated_at', { ascending: false })
+      ]);
+
+      if (assignmentError || updatesError) {
+        container.textContent = 'Could not load assignment status. ' + (assignmentError || updatesError).message;
+        return;
+      }
+      if (!assignments || assignments.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);">No assignments published yet.</p>';
+        return;
+      }
+
+      const latest = new Map();
+      (updates || []).forEach(update => {
+        const key = update.assignment_id + ':' + update.student_code;
+        if (!latest.has(key)) latest.set(key, update.status);
+      });
+
+      container.innerHTML = '';
+      assignments.forEach(assignment => {
+        const targets = assignment.target_code === 'ALL'
+          ? allStudents
+          : allStudents.filter(student => student.student_code === assignment.target_code);
+        const section = document.createElement('div');
+        section.className = 'student-row';
+        section.style.display = 'block';
+
+        const heading = document.createElement('strong');
+        heading.textContent = assignment.title + ' — ' + assignment.subject;
+        const due = document.createElement('p');
+        due.style.cssText = 'color:var(--text-secondary);font-size:.8rem;margin:4px 0 10px;';
+        due.textContent = 'Due: ' + assignment.due_date + (assignment.target_code === 'ALL' ? ' • All students' : ' • ' + assignment.target_code);
+        section.append(heading, due);
+
+        if (!targets.length) {
+          const empty = document.createElement('p');
+          empty.style.color = 'var(--text-secondary)';
+          empty.textContent = 'No matching students are currently registered.';
+          section.appendChild(empty);
+        } else {
+          targets.forEach(student => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--border-color);';
+            const name = document.createElement('span');
+            name.textContent = student.student_name;
+            const status = document.createElement('strong');
+            const current = latest.get(assignment.id + ':' + student.student_code);
+            status.textContent = current === 'Completed' ? '✅ Done' : '⏳ Not Done';
+            status.style.color = current === 'Completed' ? '#10b981' : '#f59e0b';
+            row.append(name, status);
+            section.appendChild(row);
+          });
+        }
+        container.appendChild(section);
+      });
+    }
+
+    document.getElementById('refreshAssignmentStatus').addEventListener('click', loadAssignmentOverview);
+
     async function loadStudentActivity() {
       const feed = document.getElementById('studentActivityFeed');
       const { data, error } = await supabaseClient.from('student_updates').select('*').order('updated_at', { ascending: false }).limit(20);
@@ -347,8 +424,10 @@
         const div = document.createElement('div');
         div.className = 'student-row';
         const detail = item.status === 'Completed'
-          ? `✅ Completed homework: <strong>${item.assignment_title}</strong>`
-          : `💬 Note: <em>"${item.student_note}"</em>`;
+          ? `✅ Marked done: <strong>${item.assignment_title}</strong>`
+          : item.status === 'Not Completed'
+            ? `↩️ Marked not done: <strong>${item.assignment_title}</strong>`
+            : `💬 Note: <em>"${item.student_note || ''}"</em>`;
         div.innerHTML = `
           <div>
             <strong>${item.student_name}</strong> <span class="code-badge">${item.student_code}</span>
@@ -432,6 +511,7 @@
       if (error) return alert('Error: ' + error.message);
       alert('🎉 Homework assigned!');
       e.target.reset();
+      loadAssignmentOverview();
     });
 
   </script>
