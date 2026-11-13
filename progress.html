@@ -137,4 +137,5 @@
     ];
     const grid=document.getElementById('badgesGrid');grid.replaceChildren();
     badges.forEach(b=>{const card=document.createElement('div');card.className='badge-card '+(b.earned?'':'locked');const icon=document.createElement('span');icon.className='badge-icon';icon.textContent=b.icon;const title=document.createElement('strong');title.textContent=b.title;const desc=document.createElement('p');desc.style.cssText='color:var(--text-secondary);font-size:.82rem';desc.textContent=b.description;const state=document.createElement('span');state.textContent=b.earned?'Unlocked':'Locked';card.append(icon,title,desc,state);grid.append(card)});
-  </script></body></html>
+  </script>  <script src="navigation.js" defer></script>
+</body></html>
