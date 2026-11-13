@@ -95,13 +95,16 @@
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
     const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
     themeToggle.addEventListener('click', () => {
-      const currentTheme = html.getAttribute('data-theme');
-      html.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
     });
 
     // Water Tracker Logic
-    let waterCups = parseInt(localStorage.getItem('auraway_water')) || 3;
+    const savedWaterCups = localStorage.getItem('auraway_water');
+    let waterCups = savedWaterCups === null ? 3 : Math.max(0, Math.min(8, Number.parseInt(savedWaterCups, 10) || 0));
     const maxCups = 8;
     const waterCountText = document.getElementById('waterCountText');
     const waterCupsContainer = document.getElementById('waterCupsContainer');
