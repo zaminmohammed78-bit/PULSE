@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURAWAY — Progress & Gamification</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     .level-card {
       background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15));
@@ -59,7 +59,7 @@
       <ul class="nav-links">
         <li><a href="index.html">📊 Dashboard</a></li>
         <li><a href="planner.html">📅 Study Planner</a></li>
-        <li><a href="exams.html">🎯 Exams</a></li>
+        <li><a href="exam.html">🎯 Exams</a></li>
         <li><a href="classroom.html">🎓 Classroom</a></li>
         <li><a href="focus.html">⏱️ Focus Centre</a></li>
         <li><a href="notes.html">📝 Digital Notes</a></li>
@@ -126,4 +126,22 @@
     const notes = JSON.parse(localStorage.getItem('auraway_notes')) || [];
 
     const completedTasksCount = tasks.filter(t => t.completed).length;
-    const focusMinutes
+    const focusMinutes=Number(focusStats.totalMinutes)||0;
+    const xp=completedTasksCount*100+focusMinutes*2+notes.length*25,level=Math.floor(xp/500)+1,progress=Math.round((xp%500)/500*100);
+    const rank=level>=10?'Master Scholar':level>=5?'Advanced Scholar':level>=3?'Dedicated Scholar':'Rising Scholar';
+    document.getElementById('rankBadge').textContent=rank;
+    document.getElementById('currentLevelTitle').textContent='Level '+level+' '+rank;
+    document.getElementById('totalXpText').textContent='Total XP: '+xp.toLocaleString()+' XP';
+    document.getElementById('xpProgressText').textContent=progress+'%';
+    document.getElementById('xpProgressBar').style.width=progress+'%';
+    const badges=[
+      {icon:'🌱',title:'First Steps',description:'Complete your first study task',earned:completedTasksCount>=1},
+      {icon:'📚',title:'Task Champion',description:'Complete 5 study tasks',earned:completedTasksCount>=5},
+      {icon:'🏅',title:'Task Master',description:'Complete 10 study tasks',earned:completedTasksCount>=10},
+      {icon:'⏱️',title:'Focused',description:'Finish a focus session',earned:Number(focusStats.sessions)>=1},
+      {icon:'🔥',title:'Deep Worker',description:'Finish 5 focus sessions',earned:Number(focusStats.sessions)>=5},
+      {icon:'📝',title:'Note Taker',description:'Create 5 notes',earned:notes.length>=5}
+    ];
+    const grid=document.getElementById('badgesGrid');grid.replaceChildren();
+    badges.forEach(b=>{const card=document.createElement('div');card.className='badge-card '+(b.earned?'':'locked');const icon=document.createElement('span');icon.className='badge-icon';icon.textContent=b.icon;const title=document.createElement('strong');title.textContent=b.title;const desc=document.createElement('p');desc.style.cssText='color:var(--text-secondary);font-size:.82rem';desc.textContent=b.description;const state=document.createElement('span');state.textContent=b.earned?'Unlocked':'Locked';card.append(icon,title,desc,state);grid.append(card)});
+  </script></body></html>
