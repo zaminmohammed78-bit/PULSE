@@ -6,7 +6,7 @@
 <script src="student-auth.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AURAWAY — Settings & Profile</title>
+  <title>PULSE — Settings & Profile</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .settings-group {
@@ -36,7 +36,7 @@
   <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button><div class="menu-backdrop" id="menuBackdrop" hidden></div>
     <!-- Navigation Sidebar -->
     <sidebar id="aurawaySidebar" aria-label="Main navigation">
-      <div class="logo-area">AURAWAY</div>
+      <div class="logo-area">PULSE</div>
       <ul class="nav-links" id="aurawayNavLinks"><li><a href="index.html">📊 Dashboard</a></li><li><a href="planner.html">📅 Study Planner</a></li><li><a href="timetable.html">🗓️ Timetable</a></li><li><a href="exam.html">🎯 Exams</a></li><li><a href="marks.html">📈 Marks Manager</a></li><li><a href="attendance.html">📋 Attendance</a></li><li><a href="flashcards.html">🗂️ Flashcards</a></li><li><a href="classroom.html">🎓 Classroom</a></li><li><a href="focus.html">⏱️ Focus Centre</a></li><li><a href="notes.html">📝 Digital Notes</a></li><li><a href="wellness.html">🌱 Wellness</a></li><li><a href="progress.html">🏆 Progress</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="settings.html">⚙️ Settings</a></li></ul>
       <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
     </sidebar>
@@ -88,7 +88,7 @@
 
       <!-- App Info & Reset -->
       <div class="card">
-        <h3>About AURAWAY</h3>
+        <h3>About PULSE</h3>
         <div class="settings-group" style="margin-top: 16px;">
           <div class="setting-item">
             <span style="font-size: 0.95rem;">Application Version</span>
@@ -123,8 +123,8 @@
     const DATA_KEYS=['auraway_tasks','auraway_focus_stats','auraway_assignments','auraway_water','auraway_attendance','auraway_exams','auraway_marks','auraway_notes','auraway_flashcards','auraway_student_code','auraway_habits','auraway_study_days','auraway_dashboard_prefs','auraway_tt_subjects','auraway_tt_schedule',PROFILE_KEY,'auraway_theme'];
     document.getElementById('profileNameInput').value=localStorage.getItem(PROFILE_KEY)||'Student';
     window.saveProfile=function(){const name=document.getElementById('profileNameInput').value.trim();if(!name){alert('Please enter a student name.');return}localStorage.setItem(PROFILE_KEY,name);alert('Profile name saved.')};
-    window.exportData=function(){const data={};DATA_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)data[k]=v});const blob=new Blob([JSON.stringify({app:'AURAWAY',version:1,exportedAt:new Date().toISOString(),data},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='auraway-backup.json';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url)};
-    window.importData=async function(event){const file=event.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text()),payload=parsed.data&&typeof parsed.data==='object'?parsed.data:parsed,entries=Object.entries(payload).filter(([k,v])=>DATA_KEYS.includes(k)&&typeof v==='string');if(!entries.length)throw new Error('No supported AURAWAY data found.');if(!confirm('Restore this backup? Existing saved values for included sections will be replaced.'))return;entries.forEach(([k,v])=>localStorage.setItem(k,v));alert('Backup restored. Reloading page.');location.reload()}catch(error){alert('Could not restore backup: '+error.message)}finally{event.target.value=''}};
-    window.clearAllData=function(){if(!confirm('Delete all locally saved AURAWAY data? This cannot be undone unless you have a backup.'))return;DATA_KEYS.forEach(k=>localStorage.removeItem(k));alert('Local data cleared.');location.href='index.html'};
+    window.exportData=function(){const data={};DATA_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)data[k]=v});const blob=new Blob([JSON.stringify({app:'PULSE',version:1,exportedAt:new Date().toISOString(),data},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='auraway-backup.json';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url)};
+    window.importData=async function(event){const file=event.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text()),payload=parsed.data&&typeof parsed.data==='object'?parsed.data:parsed,entries=Object.entries(payload).filter(([k,v])=>DATA_KEYS.includes(k)&&typeof v==='string');if(!entries.length)throw new Error('No supported PULSE data found.');if(!confirm('Restore this backup? Existing saved values for included sections will be replaced.'))return;entries.forEach(([k,v])=>localStorage.setItem(k,v));alert('Backup restored. Reloading page.');location.reload()}catch(error){alert('Could not restore backup: '+error.message)}finally{event.target.value=''}};
+    window.clearAllData=function(){if(!confirm('Delete all locally saved PULSE data? This cannot be undone unless you have a backup.'))return;DATA_KEYS.forEach(k=>localStorage.removeItem(k));alert('Local data cleared.');location.href='index.html'};
   </script>  <script src="navigation.js" defer></script>
 </body></html>
