@@ -83,6 +83,20 @@
       </div>
     </div>
 
+    <!-- Teacher Attendance Manager -->
+    <div class="card" style="margin-bottom:20px;" id="teacherAttendanceManager">
+      <h3>📋 Class Attendance Manager</h3>
+      <p style="color:var(--text-secondary);font-size:.88rem;margin:6px 0 12px;">Choose a class and date, mark each student, then save the register.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;">
+        <select id="attendanceClassSelect" class="input-field"><option value="">Select class</option></select>
+        <input id="attendanceDateInput" class="input-field" type="date">
+        <button type="button" class="btn" id="loadAttendanceClass">Load Class</button>
+      </div>
+      <div id="teacherAttendanceRoster"><p style="color:var(--text-secondary);">Select a class to load its students.</p></div>
+      <button type="button" class="btn" id="saveClassAttendance" style="margin-top:12px;display:none;background:#059669;">Save Class Attendance</button>
+      <p id="attendanceSaveMessage" role="status" style="margin-top:10px;"></p>
+    </div>
+
     <!-- Live Student Updates -->
     <div class="card" style="margin-bottom: 20px;">
       <h3>🔔 Live Student Updates & Completions</h3>
@@ -189,6 +203,7 @@
         return;
       }
       allStudents = data || [];
+      populateAttendanceClasses();
       if (allStudents.length === 0) {
         container.innerHTML = '<p style="color:var(--text-secondary);">No students added yet.</p>';
         return;
@@ -223,6 +238,102 @@
       if (error) return alert('Error: ' + error.message);
       loadStudentsRoster();
     }
+
+    function populateAttendanceClasses() {
+      const select = document.getElementById('attendanceClassSelect');
+      const classes = [...new Set(allStudents.map(student => student.class_name).filter(Boolean))].sort();
+      select.innerHTML = '<option value="">Select class</option>' + classes.map(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        return option.outerHTML;
+      }).join('');
+    }
+
+    async function loadAttendanceRoster() {
+      const className = document.getElementById('attendanceClassSelect').value;
+      const date = document.getElementById('attendanceDateInput').value;
+      const roster = document.getElementById('teacherAttendanceRoster');
+      const saveButton = document.getElementById('saveClassAttendance');
+      document.getElementById('attendanceSaveMessage').textContent = '';
+      if (!className || !date) {
+        roster.textContent = 'Choose both a class and date.';
+        saveButton.style.display = 'none';
+        return;
+      }
+      const students = allStudents.filter(student => student.class_name === className);
+      if (!students.length) {
+        roster.textContent = 'No students found in this class.';
+        saveButton.style.display = 'none';
+        return;
+      }
+      const codes = students.map(student => student.student_code);
+      const { data: records, error } = await supabaseClient.from('attendance_records')
+        .select('student_code,status').eq('attendance_date', date).in('student_code', codes);
+      if (error) {
+        roster.textContent = 'Could not load attendance. Run the attendance SQL setup in Supabase first. ' + error.message;
+        saveButton.style.display = 'none';
+        return;
+      }
+      const existing = new Map((records || []).map(record => [record.student_code, record.status]));
+      roster.innerHTML = '';
+      students.forEach(student => {
+        const row = document.createElement('div');
+        row.className = 'student-row';
+        const info = document.createElement('div');
+        const name = document.createElement('strong');
+        name.textContent = student.student_name;
+        const code = document.createElement('small');
+        code.textContent = student.student_code;
+        code.style.color = 'var(--text-secondary)';
+        info.append(name, document.createElement('br'), code);
+        const select = document.createElement('select');
+        select.className = 'input-field attendance-status-select';
+        select.dataset.studentCode = student.student_code;
+        select.style.maxWidth = '180px';
+        ['Present','Absent','Leave'].forEach(status => {
+          const option = document.createElement('option');
+          option.value = status;
+          option.textContent = status === 'Present' ? 'Present ✅' : status === 'Absent' ? 'Absent ❌' : 'Leave 📝';
+          select.appendChild(option);
+        });
+        select.value = existing.get(student.student_code) || 'Present';
+        row.append(info, select);
+        roster.appendChild(row);
+      });
+      saveButton.style.display = 'inline-flex';
+    }
+
+    async function saveClassAttendance() {
+      const selects = [...document.querySelectorAll('.attendance-status-select')];
+      const date = document.getElementById('attendanceDateInput').value;
+      const message = document.getElementById('attendanceSaveMessage');
+      if (!selects.length || !date) return;
+      const button = document.getElementById('saveClassAttendance');
+      button.disabled = true;
+      button.textContent = 'Saving…';
+      const records = selects.map(select => ({
+        student_code: select.dataset.studentCode,
+        attendance_date: date,
+        status: select.value
+      }));
+      const { error } = await supabaseClient.from('attendance_records')
+        .upsert(records, { onConflict: 'student_code,attendance_date' });
+      button.disabled = false;
+      button.textContent = 'Save Class Attendance';
+      if (error) {
+        message.style.color = '#ef4444';
+        message.textContent = 'Save failed: ' + error.message + '. Check the Supabase SQL setup and teacher login.';
+        return;
+      }
+      message.style.color = '#10b981';
+      message.textContent = 'Attendance saved for ' + records.length + ' students.';
+      loadStudentsRoster();
+    }
+
+    document.getElementById('attendanceDateInput').valueAsDate = new Date();
+    document.getElementById('loadAttendanceClass').addEventListener('click', loadAttendanceRoster);
+    document.getElementById('saveClassAttendance').addEventListener('click', saveClassAttendance);
 
     async function loadStudentActivity() {
       const feed = document.getElementById('studentActivityFeed');
