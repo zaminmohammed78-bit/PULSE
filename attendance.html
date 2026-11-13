@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURAWAY — Attendance Management</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="student-auth.js"></script>
   <style>
     .att-controls {
       display: grid;
@@ -101,18 +104,9 @@
         </div>
       </div>
 
-      <!-- Log Daily Attendance Form -->
-      <div class="card" style="margin-bottom: 24px;">
-        <h3>Log Attendance Record</h3>
-        <form id="attForm" class="att-controls">
-          <input type="date" id="attDate" class="input-field" required>
-          <select id="attStatus" class="input-field">
-            <option value="Present">Present ✅</option>
-            <option value="Absent">Absent ❌</option>
-            <option value="Leave">Authorized Leave 📝</option>
-          </select>
-          <button type="submit" class="btn">Save Record</button>
-        </form>
+      <div class="card" style="margin-bottom:24px;">
+        <h3>Teacher-managed attendance</h3>
+        <p style="color:var(--text-secondary);margin-top:8px;">Your teacher records attendance for your class. This page shows the records saved to your student account.</p>
       </div>
 
       <!-- Attendance Log History -->
@@ -138,22 +132,61 @@
       localStorage.setItem('auraway_theme', nextTheme);
     });
 
-    // Default date input to today
-    document.getElementById('attDate').valueAsDate = new Date();
-
-    // Attendance State
-    let attendanceLogs = JSON.parse(localStorage.getItem('auraway_attendance')) || [
-      { id: 1, date: '2026-11-10', status: 'Present' },
-      { id: 2, date: '2026-11-11', status: 'Present' },
-      { id: 3, date: '2026-11-12', status: 'Present' }
-    ];
-
-    const attForm = document.getElementById('attForm');
+    // Load teacher-recorded attendance for the signed-in student code.
     const attHistoryList = document.getElementById('attHistoryList');
 
-    function saveAndRenderAttendance() {
-      localStorage.setItem('auraway_attendance', JSON.stringify(attendanceLogs));
-      renderAttendance();
+    function renderAttendance(attendanceLogs) {
+      attHistoryList.innerHTML = '';
+      const total = attendanceLogs.length;
+      const present = attendanceLogs.filter(a => a.status === 'Present').length;
+      const missed = attendanceLogs.filter(a => a.status !== 'Present').length;
+      const pct = total > 0 ? Math.round((present / total) * 100) : 0;
+
+      const pctEl = document.getElementById('attPercentage');
+      pctEl.textContent = total ? pct + '%' : '—';
+      pctEl.style.color = pct >= 75 ? '#10b981' : '#ef4444';
+      document.getElementById('attStatusNote').textContent = total ? (pct >= 75 ? 'Great standing (Above 75%)' : 'Warning: Below 75% target') : 'No teacher records yet';
+      document.getElementById('presentCount').textContent = present;
+      document.getElementById('totalDaysNote').textContent = 'Out of ' + total + ' recorded school days';
+      document.getElementById('absentLeaveCount').textContent = missed;
+
+      if (!total) {
+        attHistoryList.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;">No attendance records have been added by your teacher yet.</p>';
+        return;
+      }
+      attendanceLogs.forEach(item => {
+        const pillClass = item.status === 'Present' ? 'pill-present' : item.status === 'Absent' ? 'pill-absent' : 'pill-leave';
+        const row = document.createElement('div');
+        row.className = 'att-history-item';
+        const date = document.createElement('strong');
+        date.textContent = item.attendance_date;
+        const status = document.createElement('span');
+        status.className = 'status-pill ' + pillClass;
+        status.textContent = item.status;
+        row.append(date, status);
+        attHistoryList.appendChild(row);
+      });
+    }
+
+    async function loadTeacherAttendance() {
+      const code = (localStorage.getItem('auraway_student_code') || '').trim().toUpperCase();
+      if (!code || !supabaseClient) {
+        attHistoryList.textContent = 'Please sign in with your student code to view attendance.';
+        renderAttendance([]);
+        return;
+      }
+      attHistoryList.textContent = 'Loading teacher attendance…';
+      const { data, error } = await supabaseClient.rpc('get_student_attendance', { p_student_code: code });
+      if (error) {
+        attHistoryList.textContent = 'Could not load attendance. Your school administrator may need to run the attendance SQL setup.';
+        console.error('Attendance lookup failed:', error);
+        renderAttendance([]);
+        return;
+      }
+      renderAttendance(data || []);
+    }
+
+    loadTeacherAttendance();
     }
 
     function renderAttendance() {
