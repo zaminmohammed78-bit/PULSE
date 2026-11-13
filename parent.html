@@ -51,6 +51,11 @@
         </div>
       </div>
 
+      <div class="card" style="margin-bottom:16px;">
+        <h3>📋 Teacher-recorded Attendance</h3>
+        <div id="pAttendanceHistory" style="margin-top:10px;">Enter a student code to load attendance.</div>
+      </div>
+
       <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-bottom: 16px;">
         <div class="card">
           <h3>📩 Teacher's Requests</h3>
@@ -91,6 +96,36 @@
       document.getElementById('pAttendance').textContent = data.attendance_pct || '100%';
       document.getElementById('pTeacherReq').textContent = data.teacher_request || 'No teacher requests.';
       document.getElementById('pImprove').textContent = data.areas_to_improve || 'Doing well!';
+
+      // Load the same teacher-managed attendance shown in the student portal.
+      const { data: attendanceRows, error: attendanceError } = await supabaseClient
+        .rpc('get_student_attendance', { p_student_code: code });
+      const attendanceBox = document.getElementById('pAttendanceHistory');
+      if (attendanceError) {
+        attendanceBox.textContent = 'Attendance setup is not complete yet. Please contact the teacher.';
+      } else {
+        const rows = attendanceRows || [];
+        const presentDays = rows.filter(row => row.status === 'Present').length;
+        const percentage = rows.length ? Math.round((presentDays / rows.length) * 100) : null;
+        document.getElementById('pAttendance').textContent = percentage === null ? 'No records yet' : percentage + '%';
+        if (!rows.length) {
+          attendanceBox.textContent = 'No attendance records have been added by the teacher yet.';
+        } else {
+          attendanceBox.innerHTML = '';
+          rows.forEach(row => {
+            const line = document.createElement('div');
+            line.className = 'hw-row';
+            const date = document.createElement('strong');
+            date.textContent = row.attendance_date;
+            const status = document.createElement('span');
+            status.textContent = row.status;
+            status.style.fontWeight = '700';
+            status.style.color = row.status === 'Present' ? '#10b981' : row.status === 'Absent' ? '#ef4444' : '#f59e0b';
+            line.append(date, status);
+            attendanceBox.appendChild(line);
+          });
+        }
+      }
 
       // Load homework & completion status
       const [{ data: hw }, { data: done }] = await Promise.all([
