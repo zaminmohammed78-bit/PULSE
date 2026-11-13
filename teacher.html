@@ -42,6 +42,14 @@
       <button class="btn" id="themeToggle">Theme</button>
     </div>
 
+    <nav aria-label="Teacher portal sections" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px;">
+      <button type="button" class="btn" onclick="document.getElementById('teacherStudentsSection').scrollIntoView({behavior:'smooth'})">👥 Students</button>
+      <button type="button" class="btn" onclick="document.getElementById('teacherAttendanceManager').scrollIntoView({behavior:'smooth'})">📋 Attendance</button>
+      <button type="button" class="btn" style="background:#0f766e;" onclick="document.getElementById('teacherAssignmentsSection').scrollIntoView({behavior:'smooth'})">📚 Assignments</button>
+      <button type="button" class="btn" onclick="document.getElementById('teacherActivitySection').scrollIntoView({behavior:'smooth'})">🔔 Activity</button>
+    </nav>
+
+    <div id="teacherStudentsSection">
     <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); margin-bottom: 20px;">
       <!-- Add Student & Generate Code -->
       <div class="card">
@@ -83,6 +91,8 @@
       </div>
     </div>
 
+    </div>
+
     <!-- Teacher Attendance Manager -->
     <div class="card" style="margin-bottom:20px;" id="teacherAttendanceManager">
       <h3>📋 Class Attendance Manager</h3>
@@ -97,6 +107,7 @@
       <p id="attendanceSaveMessage" role="status" style="margin-top:10px;"></p>
     </div>
 
+    <section id="teacherActivitySection">
     <!-- Live Student Updates -->
     <div class="card" style="margin-bottom: 20px;">
       <h3>🔔 Live Student Updates & Completions</h3>
@@ -105,15 +116,22 @@
       </div>
     </div>
 
-    <!-- Assign Homework -->
+    </section>
+
+    <section id="teacherAssignmentsSection" aria-labelledby="teacherAssignmentsHeading">
+    <!-- Teacher assignment publishing workspace -->
     <div class="card" style="margin-bottom:20px;">
-      <h3>📚 Assign Homework</h3>
+      <h3 id="teacherAssignmentsHeading">📚 Assignments — Publish to Students</h3>
       <form id="assignHwForm" class="portal-form">
         <input type="text" id="hwTitle" class="input-field" placeholder="Homework Title" required>
         <input type="text" id="hwSubject" class="input-field" placeholder="Subject (e.g. Mathematics)" required>
         <input type="date" id="hwDue" class="input-field" required>
-        <input type="text" id="hwTarget" class="input-field" placeholder="Target Student Code or 'ALL'" value="ALL">
-        <button type="submit" class="btn">Publish Homework</button>
+        <label for="hwTarget" style="font-size:.85rem;color:var(--text-secondary);">Publish to</label>
+        <select id="hwTarget" class="input-field">
+          <option value="ALL">All students</option>
+        </select>
+        <button type="submit" class="btn">🚀 Publish Assignment</button>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin:0;">Choose all students or a class. Published assignments appear in the students' Classroom and parent portal.</p>
       </form>
     </div>
 
@@ -126,6 +144,7 @@
         <p style="color:var(--text-secondary);">Loading assignment status...</p>
       </div>
     </div>
+    </section>
   </div>
 
   <script>
@@ -215,6 +234,7 @@
       }
       allStudents = data || [];
       populateAttendanceClasses();
+      populateAssignmentTargets();
       if (allStudents.length === 0) {
         container.innerHTML = '<p style="color:var(--text-secondary);">No students added yet.</p>';
         return;
@@ -259,6 +279,25 @@
         option.textContent = name;
         return option.outerHTML;
       }).join('');
+    }
+
+    function populateAssignmentTargets() {
+      const select = document.getElementById('hwTarget');
+      if (!select) return;
+      const currentValue = select.value || 'ALL';
+      const classes = [...new Set(allStudents.map(student => student.class_name).filter(Boolean))].sort();
+      select.innerHTML = '';
+      const allOption = document.createElement('option');
+      allOption.value = 'ALL';
+      allOption.textContent = 'All students';
+      select.appendChild(allOption);
+      classes.forEach(className => {
+        const option = document.createElement('option');
+        option.value = 'CLASS:' + className;
+        option.textContent = className;
+        select.appendChild(option);
+      });
+      if ([...select.options].some(option => option.value === currentValue)) select.value = currentValue;
     }
 
     async function loadAttendanceRoster() {
@@ -375,7 +414,9 @@
       assignments.forEach(assignment => {
         const targets = assignment.target_code === 'ALL'
           ? allStudents
-          : allStudents.filter(student => student.student_code === assignment.target_code);
+          : assignment.target_code.startsWith('CLASS:')
+            ? allStudents.filter(student => student.class_name === assignment.target_code.slice(6))
+            : allStudents.filter(student => student.student_code === assignment.target_code);
         const section = document.createElement('div');
         section.className = 'student-row';
         section.style.display = 'block';
@@ -505,13 +546,14 @@
       const title = document.getElementById('hwTitle').value;
       const subject = document.getElementById('hwSubject').value;
       const due_date = document.getElementById('hwDue').value;
-      const target_code = document.getElementById('hwTarget').value.trim().toUpperCase() || 'ALL';
+      const target_code = document.getElementById('hwTarget').value || 'ALL';
 
       const { error } = await supabaseClient.from('assignments').insert([{ title, subject, due_date, target_code }]);
       if (error) return alert('Error: ' + error.message);
-      alert('🎉 Homework assigned!');
+      alert('🎉 Assignment published successfully!');
       e.target.reset();
-      loadAssignmentOverview();
+      document.getElementById('hwTarget').value = 'ALL';
+      await loadAssignmentOverview();
     });
 
   </script>
