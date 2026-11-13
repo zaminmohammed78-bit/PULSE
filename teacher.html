@@ -14,6 +14,7 @@
     .input-field { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 12px; border-radius: var(--radius); font-size: 0.9rem; width: 100%; }
     .student-row { display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 8px; background: var(--bg-primary); gap: 10px; flex-wrap: wrap; }
     .code-badge { background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
+    .stat-box { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 14px; border-radius: var(--radius); }
   </style>
 </head>
 <body>
@@ -133,6 +134,17 @@
         <button type="submit" class="btn">🚀 Publish Assignment</button>
         <p style="font-size:.8rem;color:var(--text-secondary);margin:0;">Choose all students or a class. Published assignments appear in the students' Classroom and parent portal.</p>
       </form>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>📈 Assignment Dashboard</h3>
+      <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 12px;">A live summary of published work and student completion.</p>
+      <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;">
+        <div class="stat-box"><small style="color:var(--text-secondary);">📚 Total Assignments</small><h2 id="assignmentStatTotal" style="margin-top:6px;">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">✅ Completed</small><h2 id="assignmentStatCompleted" style="margin-top:6px;color:#10b981;">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">⏳ Pending</small><h2 id="assignmentStatPending" style="margin-top:6px;color:#f59e0b;">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">🎯 Completion Rate</small><h2 id="assignmentStatRate" style="margin-top:6px;">—</h2></div>
+      </div>
     </div>
 
     <div class="card" style="margin-top:20px;">
@@ -399,16 +411,36 @@
         container.textContent = 'Could not load assignment status. ' + (assignmentError || updatesError).message;
         return;
       }
-      if (!assignments || assignments.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-secondary);">No assignments published yet.</p>';
-        return;
-      }
-
       const latest = new Map();
       (updates || []).forEach(update => {
         const key = update.assignment_id + ':' + update.student_code;
         if (!latest.has(key)) latest.set(key, update.status);
       });
+
+      let totalTargets = 0;
+      let completedTargets = 0;
+      (assignments || []).forEach(assignment => {
+        const targets = assignment.target_code === 'ALL'
+          ? allStudents
+          : assignment.target_code.startsWith('CLASS:')
+            ? allStudents.filter(student => student.class_name === assignment.target_code.slice(6))
+            : allStudents.filter(student => student.student_code === assignment.target_code);
+        totalTargets += targets.length;
+        targets.forEach(student => {
+          if (latest.get(assignment.id + ':' + student.student_code) === 'Completed') completedTargets++;
+        });
+      });
+      const pendingTargets = Math.max(0, totalTargets - completedTargets);
+      const completionRate = totalTargets ? Math.round((completedTargets / totalTargets) * 100) : 0;
+      document.getElementById('assignmentStatTotal').textContent = (assignments || []).length;
+      document.getElementById('assignmentStatCompleted').textContent = completedTargets;
+      document.getElementById('assignmentStatPending').textContent = pendingTargets;
+      document.getElementById('assignmentStatRate').textContent = completionRate + '%';
+
+      if (!assignments || assignments.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);">No assignments published yet.</p>';
+        return;
+      }
 
       container.innerHTML = '';
       assignments.forEach(assignment => {
