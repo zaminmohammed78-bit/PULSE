@@ -101,7 +101,7 @@
             </div>
             <div>
               <p style="color: var(--text-secondary); font-size: 0.85rem;">Study Streak</p>
-              <p style="font-size: 1.5rem; font-weight: 700; color: #f59e0b; margin-top: 4px;">5 Days 🔥</p>
+              <p id="statStudyStreak" style="font-size: 1.5rem; font-weight: 700; color: #f59e0b; margin-top: 4px;">0 Days 🔥</p>
             </div>
           </div>
         </div>
@@ -133,7 +133,10 @@
 
     // Load stats from local storage
     let focusStats = JSON.parse(localStorage.getItem('auraway_focus_stats')) || { totalMinutes: 0, sessions: 0 };
+    focusStats.totalMinutes = Number(focusStats.totalMinutes) || 0;
+    focusStats.sessions = Number(focusStats.sessions) || 0;
     updateStatsDisplay();
+    updateStudyStreak();
 
     function updateDisplay() {
       const mins = Math.floor(totalSeconds / 60);
@@ -175,8 +178,16 @@
             if (currentModeMinutes === 25) {
               focusStats.totalMinutes += 25;
               focusStats.sessions += 1;
+              const today = new Date().toISOString().slice(0, 10);
+              focusStats.studyDays = Array.isArray(focusStats.studyDays) ? focusStats.studyDays : [];
+              if (!focusStats.studyDays.includes(today)) focusStats.studyDays.push(today);
+              let studyDays = [];
+              try { studyDays = JSON.parse(localStorage.getItem('auraway_study_days') || '[]'); } catch (e) {}
+              if (!studyDays.includes(today)) studyDays.push(today);
+              localStorage.setItem('auraway_study_days', JSON.stringify(studyDays));
               localStorage.setItem('auraway_focus_stats', JSON.stringify(focusStats));
               updateStatsDisplay();
+              updateStudyStreak();
             }
           }
         }, 1000);
@@ -194,6 +205,20 @@
     function updateStatsDisplay() {
       statTotalTime.textContent = `${focusStats.totalMinutes} mins`;
       statSessionsCount.textContent = focusStats.sessions;
+    }
+
+    function updateStudyStreak() {
+      const days = new Set();
+      try { JSON.parse(localStorage.getItem('auraway_study_days') || '[]').forEach(day => days.add(day)); } catch (e) {}
+      (focusStats.studyDays || []).forEach(day => days.add(day));
+      let tasks = [];
+      try { tasks = JSON.parse(localStorage.getItem('auraway_tasks') || '[]'); } catch (e) {}
+      tasks.filter(task => task.completedAt).forEach(task => days.add(task.completedAt.slice(0, 10)));
+      let cursor = new Date(); cursor.setHours(0, 0, 0, 0);
+      if (!days.has(cursor.toISOString().slice(0, 10))) cursor.setDate(cursor.getDate() - 1);
+      let streak = 0;
+      while (days.has(cursor.toISOString().slice(0, 10))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+      document.getElementById('statStudyStreak').textContent = `${streak} ${streak === 1 ? 'Day' : 'Days'} 🔥`;
     }
 
     updateDisplay();

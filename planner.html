@@ -172,7 +172,7 @@
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
-            <span class="priority-pill ${priorityClass}">${task.priority}</span>
+            <select aria-label="Change task priority" onchange="updateTaskPriority(${task.id}, this.value)" style="min-height:32px;padding:4px 7px;font-size:.78rem;"><option value="High" ${task.priority === 'High' ? 'selected' : ''}>High</option><option value="Medium" ${task.priority === 'Medium' ? 'selected' : ''}>Medium</option><option value="Low" ${task.priority === 'Low' ? 'selected' : ''}>Low</option></select>
             <button onclick="deleteTask(${task.id})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem;" title="Delete">🗑️</button>
           </div>
         `;
@@ -197,7 +197,20 @@
     });
 
     window.toggleTask = function(id) {
-      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed, completedAt: !t.completed ? new Date().toISOString() : null } : t);
+      if (tasks.some(t => t.id === id && t.completed)) {
+        let days = [];
+        try { days = JSON.parse(localStorage.getItem('auraway_study_days') || '[]'); } catch (e) {}
+        const today = new Date().toISOString().slice(0, 10);
+        if (!days.includes(today)) days.push(today);
+        localStorage.setItem('auraway_study_days', JSON.stringify(days));
+      }
+      saveAndRenderTasks();
+    };
+
+    window.updateTaskPriority = function(id, priority) {
+      if (!['High', 'Medium', 'Low'].includes(priority)) return;
+      tasks = tasks.map(t => t.id === id ? { ...t, priority } : t);
       saveAndRenderTasks();
     };
 

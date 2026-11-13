@@ -35,7 +35,7 @@
       </div>
 
       <!-- Real Live Stats Grid -->
-      <div class="grid-cards">
+      <div class="grid-cards" id="statsSection">
         <div class="card">
           <h3>Daily Task Progress</h3>
           <p id="dashCompletionPct" style="font-size: 2rem; font-weight: 700; color: var(--accent-primary); margin-top: 8px;">0%</p>
@@ -51,10 +51,21 @@
           <p id="dashPendingAssign" style="font-size: 2rem; font-weight: 700; color: #f59e0b; margin-top: 8px;">0 Due</p>
           <p id="dashHydrationSub" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Water: 0/8 cups</p>
         </div>
+        <div class="card">
+          <h3>Study Streak 🔥</h3>
+          <p id="dashStudyStreak" style="font-size: 2rem; font-weight: 700; color: #f59e0b; margin-top: 8px;">0 days</p>
+          <p id="dashStreakSub" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Complete a task or focus session to start.</p>
+        </div>
+      </div>
+
+      <div class="card" id="examCountdownSection" style="margin-bottom: 24px;">
+        <h3>Next Exam 🎯</h3>
+        <p id="dashExamName" style="font-weight: 700; margin-top: 8px;">No upcoming exams scheduled</p>
+        <p id="dashExamCountdown" style="color: var(--text-secondary); font-size: 0.9rem;">Add an exam in the Exams section to see your countdown.</p>
       </div>
 
       <!-- Today's Real Tasks & Quick Actions -->
-      <div class="grid-cards" style="grid-template-columns: 2fr 1fr;">
+      <div class="grid-cards" id="tasksQuickSection" style="grid-template-columns: 2fr 1fr;">
         <div class="card">
           <h3>Upcoming Study Tasks</h3>
           <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">Synced from your Study Planner</p>
@@ -68,9 +79,20 @@
             <button class="btn" onclick="location.href='focus.html'">⏱️ Start Focus Session</button>
             <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="location.href='planner.html'">➕ Add Study Task</button>
             <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="location.href='notes.html'">📝 Create Note</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="location.href='exam.html'">🎯 View Exams</button>
           </div>
         </div>
       </div>
+
+      <details class="card" id="dashboardCustomize" style="margin-top: 4px;">
+        <summary style="cursor: pointer; font-weight: 700;">⚙️ Customize Dashboard</summary>
+        <p style="color: var(--text-secondary); font-size: .85rem; margin: 8px 0 12px;">Choose which sections appear on your dashboard. Your choices are saved on this device.</p>
+        <div style="display: grid; gap: 10px;">
+          <label><input type="checkbox" data-dashboard-section="statsSection" checked> Show overview and study streak</label>
+          <label><input type="checkbox" data-dashboard-section="examCountdownSection" checked> Show next exam countdown</label>
+          <label><input type="checkbox" data-dashboard-section="tasksQuickSection" checked> Show tasks and quick actions</label>
+        </div>
+      </details>
     </main>
   </div>
 
@@ -120,6 +142,47 @@
     const pendingAssign = assignments.filter(a => a.status !== 'Submitted').length;
     document.getElementById('dashPendingAssign').textContent = `${pendingAssign} Due`;
     document.getElementById('dashHydrationSub').textContent = `Hydration: ${waterCups}/8 cups today`;
+
+    // Study streak from real task/focus activity dates
+    function getStudyStreak() {
+      let days = [];
+      try { days = JSON.parse(localStorage.getItem('auraway_study_days') || '[]'); } catch (e) {}
+      const completedDates = tasks.filter(t => t.completedAt).map(t => t.completedAt.slice(0, 10));
+      const uniqueDays = new Set([...days, ...completedDates]);
+      let cursor = new Date(); cursor.setHours(0, 0, 0, 0);
+      if (!uniqueDays.has(cursor.toISOString().slice(0, 10))) cursor.setDate(cursor.getDate() - 1);
+      let streak = 0;
+      while (uniqueDays.has(cursor.toISOString().slice(0, 10))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+      return streak;
+    }
+    const studyStreak = getStudyStreak();
+    document.getElementById('dashStudyStreak').textContent = `${studyStreak} ${studyStreak === 1 ? 'day' : 'days'}`;
+    document.getElementById('dashStreakSub').textContent = studyStreak ? 'Keep it going — study a little each day!' : 'Complete a task or focus session to start.';
+
+    // Next upcoming exam countdown
+    let exams = [];
+    try { exams = JSON.parse(localStorage.getItem('auraway_exams') || '[]'); } catch (e) {}
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const upcomingExam = exams.filter(exam => exam.date && new Date(exam.date + 'T00:00:00') >= todayStart).sort((a, b) => a.date.localeCompare(b.date))[0];
+    if (upcomingExam) {
+      const examDate = new Date(upcomingExam.date + 'T00:00:00');
+      const daysLeft = Math.round((examDate - todayStart) / 86400000);
+      document.getElementById('dashExamName').textContent = upcomingExam.subject;
+      document.getElementById('dashExamCountdown').textContent = daysLeft === 0 ? 'Your exam is today!' : daysLeft === 1 ? 'Tomorrow is exam day.' : `${daysLeft} days remaining · ${upcomingExam.date}`;
+    }
+
+    // Dashboard section visibility preferences
+    const dashboardPrefs = (() => { try { return JSON.parse(localStorage.getItem('auraway_dashboard_prefs') || '{}'); } catch (e) { return {}; } })();
+    document.querySelectorAll('[data-dashboard-section]').forEach(input => {
+      const sectionId = input.dataset.dashboardSection;
+      input.checked = dashboardPrefs[sectionId] !== false;
+      document.getElementById(sectionId).hidden = !input.checked;
+      input.addEventListener('change', () => {
+        dashboardPrefs[sectionId] = input.checked;
+        document.getElementById(sectionId).hidden = !input.checked;
+        localStorage.setItem('auraway_dashboard_prefs', JSON.stringify(dashboardPrefs));
+      });
+    });
 
     // 4. Upcoming Tasks Preview
     const dashTaskList = document.getElementById('dashTaskList');
