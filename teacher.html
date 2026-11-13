@@ -120,7 +120,7 @@
       event.preventDefault();
       const name = document.getElementById('teacherDisplayName').value.trim();
       const code = document.getElementById('teacherAccessCode').value;
-      const button = document.getElementById('teacherLoginButton');
+      const button = event.currentTarget;
       const errorBox = document.getElementById('teacherLoginError');
       if (!supabaseClient || !name || !code) {
         errorBox.textContent = 'Enter your first name and teacher access code.';
