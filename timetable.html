@@ -168,107 +168,18 @@
   </div>
 
   <script>
-    // Persistent Theme Handling
-    const themeToggle = document.getElementById('themeToggle');
-    const html = document.documentElement;
-    const savedTheme = localStorage.getItem('auraway_theme') || 'dark';
-    html.setAttribute('data-theme', savedTheme);
-
-    themeToggle.addEventListener('click', () => {
-      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', nextTheme);
-      localStorage.setItem('auraway_theme', nextTheme);
-    });
-
-    // Subjects & Weights State
-    let subjects = JSON.parse(localStorage.getItem('auraway_tt_subjects')) || [
-      { id: 1, name: 'Mathematics', weight: 3 },
-      { id: 2, name: 'Physics', weight: 2 },
-      { id: 3, name: 'Social Science', weight: 2 },
-      { id: 4, name: 'English', weight: 1 }
-    ];
-
-    let weeklySchedule = JSON.parse(localStorage.getItem('auraway_tt_schedule')) || {};
-
-    function renderSubjects() {
-      const container = document.getElementById('subjectChips');
-      container.innerHTML = '';
-      subjects.forEach(s => {
-        const label = s.weight === 3 ? 'High' : s.weight === 2 ? 'Med' : 'Low';
-        const chip = document.createElement('div');
-        chip.className = 'subject-chip';
-        chip.innerHTML = `
-          <span>${s.name} <small style="color: var(--accent-primary);">(${label})</small></span>
-          <button onclick="removeSubject(${s.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold;">×</button>
-        `;
-        container.appendChild(chip);
-      });
-      localStorage.setItem('auraway_tt_subjects', JSON.stringify(subjects));
-    }
-
-    document.getElementById('addSubjectForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name = document.getElementById('subjName').value.trim();
-      const weight = parseInt(document.getElementById('subjPriority').value);
-      if (!name) return;
-      subjects.push({ id: Date.now(), name, weight });
-      renderSubjects();
-      e.target.reset();
-    });
-
-    window.removeSubject = function(id) {
-      subjects = subjects.filter(s => s.id !== id);
-      renderSubjects();
-    };
-
-    // Helper: Format minutes from midnight to HH:MM AM/PM
-    function formatMinutes(totalMins) {
-      const hrs24 = Math.floor(totalMins / 60) % 24;
-      const mins = totalMins % 60;
-      const period = hrs24 >= 12 ? 'PM' : 'AM';
-      const hrs12 = hrs24 % 12 || 12;
-      return `${hrs12}:${mins.toString().padStart(2, '0')} ${period}`; }  // Deterministic Rule-Based Timetable Generator (No AI) window.generateRuleTimetable = function() { if (subjects.length === 0) { alert('Please add at least one subject first.'); return; }  const startStr = document.getElementById('startTimeInput').value \vert{}\vert{} '17:00'; const [startH, startM] = startStr.split(':').map(Number); const baseStartMins = startH * 60 + startM;  const sessionsCount = parseInt(document.getElementById('sessionsPerDay').value); const studyDur = parseInt(document.getElementById('sessionDuration').value); const breakDur = parseInt(document.getElementById('breakDuration').value);  // Build weighted rotation pool based on subject priority const weightedPool = []; subjects.forEach(subj => { for (let i = 0; i < subj.weight; i++) { weightedPool.push(subj.name); } });  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']; const newSchedule = {}; let poolIndex = 0;  days.forEach((day, dayIdx) => { const slots = []; let cursorMins = baseStartMins; // Sunday gets lighter revision load (max 2 sessions) const countForDay = day === 'Sunday' ? Math.min(2, sessionsCount) : sessionsCount;  for (let s = 0; s < countForDay; s++) { const subjectName = weightedPool[poolIndex \% weightedPool.length]; poolIndex++;  const endMins = cursorMins + studyDur; slots.push({ type: 'study', time: `${formatMinutes(cursorMins)} - ${formatMinutes(endMins)}`, title: day === 'Sunday' ? `${subjectName} (Weekly Revision)` : subjectName
-          });
-          cursorMins = endMins;
-
-          // Add break after every session except the last one
-          if (s < countForDay - 1) {
-            const breakEnd = cursorMins + breakDur;
-            slots.push({
-              type: 'break',
-              time: `${formatMinutes(cursorMins)} -${formatMinutes(breakEnd)}`,
-              title: `Rest & Hydration Break (${breakDur}m)`
-            });
-            cursorMins = breakEnd;
-          }
-        }
-        newSchedule[day] = slots;
-      });
-
-      weeklySchedule = newSchedule;
-      localStorage.setItem('auraway_tt_schedule', JSON.stringify(weeklySchedule));
-      renderTimetable();
-    };
-
-    window.clearTimetable = function() {
-      weeklySchedule = {};
-      localStorage.removeItem('auraway_tt_schedule');
-      renderTimetable();
-    };
-
-    function renderTimetable() {
-      const grid = document.getElementById('weekGrid');
-      grid.innerHTML = '';
-      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-      if (Object.keys(weeklySchedule).length === 0) {
-        grid.innerHTML = '<p style="color: var(--text-secondary); grid-column: 1 / -1; padding: 16px;">No timetable generated yet. Configure your subjects above and tap "Generate Weekly Timetable".</p>';
-        return;
-      }
-
-      days.forEach(day => {
-        const daySlots = weeklySchedule[day] || [];
-        const card = document.createElement('div');
-        card.className = 'day-card';
-        let slotsHTML = daySlots.map(slot => `
-          <div class="slot-
+    const themeToggle=document.getElementById('themeToggle'),html=document.documentElement;
+    html.setAttribute('data-theme',localStorage.getItem('auraway_theme')||'dark');
+    themeToggle.addEventListener('click',()=>{const next=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',next);localStorage.setItem('auraway_theme',next)});
+    let subjects=[],weeklySchedule={};
+    try{subjects=JSON.parse(localStorage.getItem('auraway_tt_subjects'))||[]}catch(e){}
+    try{weeklySchedule=JSON.parse(localStorage.getItem('auraway_tt_schedule'))||{}}catch(e){}
+    if(!subjects.length)subjects=[{id:1,name:'Mathematics',weight:3},{id:2,name:'Physics',weight:2},{id:3,name:'Social Science',weight:2},{id:4,name:'English',weight:1}];
+    function renderSubjects(){const root=document.getElementById('subjectChips');root.replaceChildren();subjects.forEach(s=>{const chip=document.createElement('div');chip.className='subject-chip';const label=document.createElement('span');label.textContent=s.name+' ('+(s.weight===3?'High':s.weight===2?'Med':'Low')+')';const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.addEventListener('click',()=>{subjects=subjects.filter(x=>x.id!==s.id);renderSubjects()});chip.append(label,remove);root.append(chip)});localStorage.setItem('auraway_tt_subjects',JSON.stringify(subjects))}
+    document.getElementById('addSubjectForm').addEventListener('submit',e=>{e.preventDefault();const name=document.getElementById('subjName').value.trim(),weight=Number(document.getElementById('subjPriority').value);if(!name)return;subjects.push({id:Date.now(),name,weight:[1,2,3].includes(weight)?weight:2});renderSubjects();e.target.reset()});
+    function formatMinutes(total){const h=Math.floor(total/60)%24,m=total%60;return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM')}
+    window.generateRuleTimetable=function(){if(!subjects.length){alert('Please add at least one subject first.');return}const start=document.getElementById('startTimeInput').value||'17:00',[h,m]=start.split(':').map(Number),sessions=Number(document.getElementById('sessionsPerDay').value),study=Number(document.getElementById('sessionDuration').value),rest=Number(document.getElementById('breakDuration').value),pool=subjects.flatMap(s=>Array(Math.max(1,Math.min(3,s.weight))).fill(s.name)),days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],schedule={};let n=0;days.forEach(day=>{let cursor=h*60+m;const slots=[],count=day==='Sunday'?Math.min(2,sessions):sessions;for(let i=0;i<count;i++){const name=pool[n++%pool.length],end=cursor+study;slots.push({type:'study',time:formatMinutes(cursor)+' - '+formatMinutes(end),title:day==='Sunday'?name+' (Weekly Revision)':name});cursor=end;if(i<count-1){const stop=cursor+rest;slots.push({type:'break',time:formatMinutes(cursor)+' - '+formatMinutes(stop),title:'Rest & Hydration Break ('+rest+'m)'});cursor=stop}}schedule[day]=slots});weeklySchedule=schedule;localStorage.setItem('auraway_tt_schedule',JSON.stringify(schedule));renderTimetable()};
+    window.clearTimetable=function(){weeklySchedule={};localStorage.removeItem('auraway_tt_schedule');renderTimetable()};
+    function renderTimetable(){const grid=document.getElementById('weekGrid');grid.replaceChildren();const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];if(!Object.keys(weeklySchedule).length){const p=document.createElement('p');p.textContent='No timetable generated yet. Configure your subjects above and tap "Generate Weekly Timetable".';grid.append(p);return}days.forEach(day=>{const card=document.createElement('div');card.className='day-card';const heading=document.createElement('h4');heading.textContent=day;card.append(heading);(weeklySchedule[day]||[]).forEach(slot=>{const item=document.createElement('div');item.className='slot-'+slot.type;const time=document.createElement('strong');time.textContent=slot.time;const title=document.createElement('div');title.textContent=slot.title;item.append(time,title);card.append(item)});grid.append(card)})}
+    renderSubjects();renderTimetable();
+  </script></body></html>
