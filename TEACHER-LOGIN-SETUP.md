@@ -6,8 +6,7 @@ The teacher portal has **Sign up** and **Sign in** buttons. Both use a first nam
 
 1. In the Supabase project connected in `supabase.js`, open **Project Settings → Edge Functions → Secrets** (or use the Supabase CLI).
 2. Add a secret named `TEACHER_ACCESS_CODE` and set its value to the private teacher code. Do not put the value in GitHub, this file, HTML, JavaScript, or a browser screenshot.
-3. Deploy the function in `supabase/functions/teacher-access/index.ts` with the name `teacher-access`.
-   - With the Supabase CLI: `supabase functions deploy teacher-access`
+3. The current Supabase deployment in this project has the function slug `hyper-function` (its dashboard display name may show `teacher-access`). The teacher portal therefore calls `https://iazlemocpuhzwtrkyfgw.supabase.co/functions/v1/hyper-function`. Changing the display name in Settings does not change the function slug. If you later deploy a new function with the actual slug `teacher-access`, update `TEACHER_AUTH_FUNCTION_URL` in `teacher.html` to match.
    - The deployed function also needs the standard `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` environment values. Supabase normally provides these to Edge Functions.
 4. In Supabase Authentication settings, enable the **Email** provider. The function creates/uses the internal teacher identity `teacher@auraway.app` and returns a one-time magic-link token to the browser; the teacher does not enter an email address.
 5. Open `teacher.html`, choose **Sign up** for the first setup, and enter the first name and private code. Later, use **Sign in**.
