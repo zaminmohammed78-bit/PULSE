@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURAWAY — Personal Wellness & Habits</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .habit-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+    }
+    .water-counter {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+    }
+    .water-cups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .cup-icon {
+      font-size: 1.5rem;
+      cursor: pointer;
+      opacity: 0.3;
+      transition: opacity 0.2s ease;
+    }
+    .cup-icon.filled {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation Sidebar -->
+    <sidebar>
+      <div class="logo-area">AURAWAY</div>
+      <ul class="nav-links">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html" class="active">🌱 Wellness</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Toggle Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Personal Wellness & Habits 🌱</h1>
+          <p>Maintain your health, track daily hydration, and build balanced routines.</p>
+        </div>
+      </div>
+
+      <!-- Grid Layout: Water Tracker & Habit Checklist -->
+      <div class="grid-cards" style="grid-template-columns: 1fr 1fr;">
+        <!-- Water Intake Tracker -->
+        <div class="card">
+          <h3>💧 Daily Water Intake</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Target: 8 Cups (2 Liters)</p>
+          <div class="water-counter">
+            <span id="waterCountText" style="font-size: 1.5rem; font-weight: 700; color: var(--accent-primary);">0 / 8 Cups</span>
+            <button class="btn" style="padding: 6px 12px; font-size: 0.8rem;" onclick="resetWater()">Reset</button>
+          </div>
+          <div id="waterCupsContainer" class="water-cups">
+            <!-- Cups injected via JS -->
+          </div>
+        </div>
+
+        <!-- Daily Habits Tracker -->
+        <div class="card">
+          <h3>✅ Healthy Daily Routines</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">Check off your daily self-care habits.</p>
+          <div id="habitsList">
+            <!-- Habits injected via JS -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = html.getAttribute('data-theme');
+      html.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    // Water Tracker Logic
+    let waterCups = parseInt(localStorage.getItem('auraway_water')) || 3;
+    const maxCups = 8;
+    const waterCountText = document.getElementById('waterCountText');
+    const waterCupsContainer = document.getElementById('waterCupsContainer');
+
+    function renderWater() {
+      waterCountText.textContent = `${waterCups} / ${maxCups} Cups`;
+      waterCupsContainer.innerHTML = '';
+      for (let i = 1; i <= maxCups; i++) {
+        const span = document.createElement('span');
+        span.className = `cup-icon ${i <= waterCups ? 'filled' : ''}`;
+        span.innerHTML = '🥛';
+        span.title = `Cup ${i}`;
+        span.onclick = () => setWater(i);
+        waterCupsContainer.appendChild(span);
+      }
+      localStorage.setItem('auraway_water', waterCups);
+    }
+
+    window.setWater = function(count) {
+      waterCups = count;
+      renderWater();
+    };
+
+    window.resetWater = function() {
+      waterCups = 0;
+      renderWater();
+    };
+
+    renderWater();
+
+    // Habits Tracker Logic
+    let habits = JSON.parse(localStorage.getItem('auraway_habits')) || [
+      { id: 1, title: 'Morning Stretching / Exercise', completed: true },
+      { id: 2, title: 'Take 15-min screen breaks', completed: false },
+      { id: 3, title: 'Consistent Sleep Schedule (8 Hours)', completed: true }
+    ];
+
+    const habitsList = document.getElementById('habitsList');
+
+    function renderHabits() {
+      habitsList.innerHTML = '';
+      habits.forEach(habit => {
+        const div = document.createElement('div');
+        div.className = 'habit-item';
+        div.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="checkbox" ${habit.completed ? 'checked' : ''} onclick="toggleHabit(${habit.id})" style="width: 18px; height: 18px; cursor: pointer;">
+            <span style="font-size: 0.95rem; ${habit.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${habit.title}</span>
+          </div>
+        `;
+        habitsList.appendChild(div);
+      });
+      localStorage.setItem('auraway_habits', JSON.stringify(habits));
+    }
+
+    window.toggleHabit = function(id) {
+      habits = habits.map(h => h.id === id ? { ...h, completed: !h.completed } : h);
+      renderHabits();
+    };
+
+    renderHabits();
+  </script>
+</body>
+</html>

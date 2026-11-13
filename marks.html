@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURAWAY — Academic Marks Manager</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .marks-form {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1fr 1fr auto;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    @media (max-width: 768px) {
+      .marks-form {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .mark-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+    .grade-badge {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .grade-a { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .grade-b { background: rgba(59, 130, 246, 0.15); color: var(--accent-primary); }
+    .grade-c { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .grade-f { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation Sidebar -->
+    <sidebar>
+      <div class="logo-area">AURAWAY</div>
+      <ul class="nav-links">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="timetable.html">🗓️ Timetable</a></li>
+        <li><a href="exams.html">🎯 Exams</a></li>
+        <li><a href="marks.html" class="active">📈 Marks Manager</a></li>
+        <li><a href="flashcards.html">🗂️ Flashcards</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html">🌱 Wellness</a></li>
+        <li><a href="progress.html">🏆 Progress</a></li>
+        <li><a href="settings.html">⚙️ Settings</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Academic Marks Manager 📈</h1>
+          <p>Record your examination results, calculate percentages, and track academic performance.</p>
+        </div>
+      </div>
+
+      <!-- Quick Summary Card -->
+      <div class="grid-cards" style="margin-bottom: 24px;">
+        <div class="card">
+          <h3>Overall Average Percentage</h3>
+          <p id="overallAvgPct" style="font-size: 2.2rem; font-weight: 800; color: var(--accent-primary); margin-top: 8px;">0.0%</p>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Based on recorded exam results</p>
+        </div>
+        <div class="card">
+          <h3>Total Exams Logged</h3>
+          <p id="totalExamsLogged" style="font-size: 2.2rem; font-weight: 800; color: #10b981; margin-top: 8px;">0</p>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Evaluated subjects</p>
+        </div>
+      </div>
+
+      <!-- Add Mark Form -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>Record New Examination Mark</h3>
+        <form id="markForm" class="marks-form">
+          <input type="text" id="markExamName" class="input-field" placeholder="Exam Title (e.g. Mid-Term Exam)" required>
+          <select id="markSubject" class="input-field">
+            <option value="Mathematics">Mathematics</option>
+            <option value="Physics">Physics</option>
+            <option value="Chemistry">Chemistry</option>
+            <option value="Social Science">Social Science</option>
+            <option value="English">English</option>
+            <option value="Information Technology">Information Technology</option>
+          </select>
+          <input type="number" id="markObtained" class="input-field" min="0" placeholder="Marks Scored (e.g. 42)" required>
+          <input type="number" id="markTotal" class="input-field" min="1" placeholder="Max Marks (e.g. 50)" required>
+          <button type="submit" class="btn">Save Mark</button>
+        </form>
+      </div>
+
+      <!-- Marks History List -->
+      <div class="card">
+        <h3>Examination Results History</h3>
+        <div id="marksList" style="margin-top: 14px;">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Persistent Theme Handling
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const savedTheme = localStorage.getItem('auraway_theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
+    });
+
+    // Marks State
+    let marks = JSON.parse(localStorage.getItem('auraway_marks')) || [
+      { id: 1, examName: 'Mid-Term Assessment', subject: 'Mathematics', obtained: 45, total: 50 },
+      { id: 2, examName: 'Mid-Term Assessment', subject: 'Physics', obtained: 38, total: 50 },
+      { id: 3, examName: 'Quarterly Examination', subject: 'Social Science', obtained: 82, total: 100 }
+    ];
+
+    const markForm = document.getElementById('markForm');
+    const marksList = document.getElementById('marksList');
+    const overallAvgPct = document.getElementById('overallAvgPct');
+    const totalExamsLogged = document.getElementById('totalExamsLogged');
+
+    function saveAndRenderMarks() {
+      localStorage.setItem('auraway_marks', JSON.stringify(marks));
+      renderMarks();
+    }
+
+    function getGradeBadge(pct) {
+      if (pct >= 90) return '<span class="grade-badge grade-a">A+ (Outstanding)</span>';
+      if (pct >= 80) return '<span class="grade-badge grade-a">A (Excellent)</span>';
+      if (pct >= 70) return '<span class="grade-badge grade-b">B (Good)</span>';
+      if (pct >= 50) return '<span class="grade-badge grade-c">C (Average)</span>';
+      return '<span class="grade-badge grade-f">F (Needs Work)</span>';
+    }
+
+    function renderMarks() {
+      marksList.innerHTML = '';
+      totalExamsLogged.textContent = marks.length;
+
+      if (marks.length === 0) {
+        marksList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No examination marks recorded yet.</p>';
+        overallAvgPct.textContent = '0.0%';
+        return;
+      }
+
+      let totalPctSum = 0;
+
+      marks.forEach(m => {
+        const pct = Math.round((m.obtained / m.total) * 100);
+        totalPctSum += pct;
+
+        const div = document.createElement('div');
+        div.className = 'mark-item';
+        div.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 700;">${m.subject} &bull; ${m.examName}</span>
+            <h4 style="font-size: 1.05rem; margin-top: 2px;">Score: ${m.obtained} / ${m.total} (${pct}%)</h4>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            ${getGradeBadge(pct)}
+            <button onclick="deleteMark(${m.id})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem;" title="Delete">🗑️</button>
+          </div>
+        `;
+        marksList.appendChild(div);
+      });
+
+      const avg = (totalPctSum / marks.length).toFixed(1);
+      overallAvgPct.textContent = `${avg}%`;
+    }
+
+    markForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newMark = {
+        id: Date.now(),
+        examName: document.getElementById('markExamName').value,
+        subject: document.getElementById('markSubject').value,
+        obtained: parseFloat(document.getElementById('markObtained').value),
+        total: parseFloat(document.getElementById('markTotal').value)
+      };
+      if (newMark.obtained > newMark.total) {
+        alert('Marks scored cannot be greater than total max marks.');
+        return;
+      }
+      marks.unshift(newMark);
+      saveAndRenderMarks();
+      markForm.reset();
+    });
+
+    window.deleteMark = function(id) {
+      marks = marks.filter(m => m.id !== id);
+      saveAndRenderMarks();
+    };
+
+    renderMarks();
+  </script>
+</body>
+</html>

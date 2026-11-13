@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURAWAY — Settings & Profile</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation Sidebar -->
+    <sidebar>
+      <div class="logo-area">AURAWAY</div>
+      <ul class="nav-links">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="exams.html">🎯 Exams</a></li>
+        <li><a href="flashcards.html">🗂️ Flashcards</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html">🌱 Wellness</a></li>
+        <li><a href="progress.html">🏆 Progress</a></li>
+        <li><a href="settings.html" class="active">⚙️ Settings</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Settings & Account ⚙️</h1>
+          <p>Customize your profile, preferences, and manage offline data backups.</p>
+        </div>
+      </div>
+
+      <!-- Profile Settings -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>Student Profile</h3>
+        <div class="settings-group" style="margin-top: 16px;">
+          <div class="setting-item">
+            <div>
+              <h4 style="font-size: 0.95rem;">Student Name</h4>
+              <p style="font-size: 0.82rem; color: var(--text-secondary);">Displayed on your dashboard greeting</p>
+            </div>
+            <input type="text" id="profileNameInput" class="input-field" value="Student">
+          </div>
+          <div class="setting-item">
+            <div>
+              <h4 style="font-size: 0.95rem;">Academic Curriculum / Grade</h4>
+              <p style="font-size: 0.82rem; color: var(--text-secondary);">Secondary School / Kerala Syllabus</p>
+            </div>
+            <button class="btn" style="padding: 6px 14px; font-size: 0.82rem;" onclick="saveProfile()">Save Name</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Backup & Restore Centre (Local JSON) -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>💾 Offline Data Backup & Restore</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; margin-bottom: 16px;">
+          Export all your tasks, notes, flashcards, and focus stats into a secure backup file or restore them anytime.
+        </p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn" onclick="exportData()">📥 Export Backup (JSON)</button>
+          <label class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; display: inline-flex; align-items: center;">
+            📤 Restore Backup
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- App Info & Reset -->
+      <div class="card">
+        <h3>About AURAWAY</h3>
+        <div class="settings-group" style="margin-top: 16px;">
+          <div class="setting-item">
+            <span style="font-size: 0.95rem;">Application Version</span>
+            <span style="font-size: 0.9rem; color: var(--text-secondary);">v1.0.0 (Offline-First Web Edition)</span>
+          </div>
+          <div class="setting-item">
+            <span style="font-size: 0.95rem;">AI Features</span>
+            <span style="font-size: 0.9rem; color: #10b981; font-weight: 600;">Disabled (100% Rule & Logic Based)</span>
+          </div>
+          <div style="margin-top: 10px;">
+            <button class="btn" style="background: #ef4444;" onclick="clearAllData()">⚠️ Reset All Local Data</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Persistent Theme Handling
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const savedTheme = localStorage.getItem('auraway_theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
+    });

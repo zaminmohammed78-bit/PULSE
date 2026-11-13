@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURAWAY — Teacher Portal & Codes</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <style>
+    .portal-form { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+    .input-field { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 14px; border-radius: var(--radius); font-size: 0.95rem; width: 100%; }
+    .code-box { background: rgba(16, 185, 129, 0.15); border: 1px dashed #10b981; padding: 12px; border-radius: var(--radius); text-align: center; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <sidebar>
+      <div class="logo-area">AURAWAY</div>
+      <ul class="nav-links">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Planner</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="portals.html" class="active">🏫 Teacher Portal</a></li>
+        <li><a href="settings.html">⚙️ Settings</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Teacher Portal & Code Manager 👩‍🏫</h1>
+          <p>Generate student access codes and publish cloud assignments.</p>
+        </div>
+      </div>
+
+      <div class="grid-cards" style="grid-template-columns: 1fr 1fr; margin-bottom: 24px;">
+        <!-- Generate Student Code Card -->
+        <div class="card">
+          <h3>🔑 Generate Student Access Code</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem;">Create a unique code for a student to log in without passwords.</p>
+          <form id="studentCodeForm" class="portal-form">
+            <input type="text" id="regStudentName" class="input-field" placeholder="Student Name (e.g. Rahul K.)" required>
+            <input type="text" id="regClassName" class="input-field" placeholder="Class / Section (e.g. Class 8A)" required>
+            <button type="submit" class="btn">Generate Code</button>
+          </form>
+          <div id="generatedCodeResult" style="display: none;" class="code-box">
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Give this code to the student:</p>
+            <h2 id="displayCodeText" style="color: #10b981; letter-spacing: 1px; margin: 4px 0;"></h2>
+          </div>
+        </div>
+
+        <!-- Publish Cloud Assignment Card -->
+        <div class="card">
+          <h3>📚 Publish Assignment (Supabase)</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem;">Assign homework to all students or a specific student code.</p>
+          <form id="cloudAssignForm" class="portal-form">
+            <input type="text" id="hwTitle" class="input-field" placeholder="Assignment Title" required>
+            <select id="hwSubject" class="input-field">
+              <option value="Mathematics">Mathematics</option>
+              <option value="Physics">Physics</option>
+              <option value="Social Science">Social Science</option>
+              <option value="English">English</option>
+              <option value="Information Technology">Information Technology</option>
+            </select>
+            <input type="date" id="hwDueDate" class="input-field" required>
+            <input type="text" id="hwTargetCode" class="input-field" placeholder="Target Code (Leave blank for 'ALL')" value="ALL">
+            <button type="submit" class="btn" style="background: #10b981;">Publish to Cloud</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Theme setup
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
+    themeToggle.addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('auraway_theme', next);
+    });
+
+    // 1. Generate Student Code and Save to Supabase
+    document.getElementById('studentCodeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const student_name = document.getElementById('regStudentName').value;
+      const class_name = document.getElementById('regClassName').value;
+      
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+      const student_code = `${class_name.replace(/\s+/g, '').toUpperCase()}-${randomNum}`;
+
+      const { error } = await supabaseClient
+        .from('students')
+        .insert([{ student_name, class_name, student_code }]);
+
+      if (error) {
+        alert('Error saving student: ' + error.message);
+      } else {
+        document.getElementById('displayCodeText').textContent = student_code;
+        document.getElementById('generatedCodeResult').style.display = 'block';
+        alert(`✅ Student code ${student_code} generated successfully!`);
+      }
+    });
+
+    // 2. Publish Assignment to Supabase
+    document.getElementById('cloudAssignForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('hwTitle').value;
+      const subject = document.getElementById('hwSubject').value;
+      const due_date = document.getElementById('hwDueDate').value;
+      const target_code = document.getElementById('hwTargetCode').value.trim() || 'ALL';
+
+      const { error } = await supabaseClient
+        .from('assignments')
+        .insert([{ title, subject, due_date, target_code, status: 'Pending' }]);
+
+      if (error) {
+        alert('Error publishing assignment: ' + error.message);
+      } else {
+        alert('🎉 Assignment published live to Supabase cloud!');
+        e.target.reset();
+      }
+    });
+  </script>
+</body>
+</html>
+

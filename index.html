@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURAWAY — Student Productivity Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation Sidebar -->
+    <sidebar>
+      <div class="logo-area">AURAWAY</div>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html">🌱 Wellness</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1 id="greetingText">Welcome back, Student! 👋</h1>
+          <p id="currentDateText">Loading today's overview...</p>
+        </div>
+      </div>
+
+      <!-- Real Live Stats Grid -->
+      <div class="grid-cards">
+        <div class="card">
+          <h3>Daily Task Progress</h3>
+          <p id="dashCompletionPct" style="font-size: 2rem; font-weight: 700; color: var(--accent-primary); margin-top: 8px;">0%</p>
+          <p id="dashCompletionSub" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">0 of 0 tasks completed</p>
+        </div>
+        <div class="card">
+          <h3>Focus Time Logged</h3>
+          <p id="dashFocusTime" style="font-size: 2rem; font-weight: 700; color: #10b981; margin-top: 8px;">0 mins</p>
+          <p id="dashFocusSub" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">0 sessions completed</p>
+        </div>
+        <div class="card">
+          <h3>Pending Assignments</h3>
+          <p id="dashPendingAssign" style="font-size: 2rem; font-weight: 700; color: #f59e0b; margin-top: 8px;">0 Due</p>
+          <p id="dashHydrationSub" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Water: 0/8 cups</p>
+        </div>
+      </div>
+
+      <!-- Today's Real Tasks & Quick Actions -->
+      <div class="grid-cards" style="grid-template-columns: 2fr 1fr;">
+        <div class="card">
+          <h3>Upcoming Study Tasks</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">Synced from your Study Planner</p>
+          <ul id="dashTaskList" style="list-style: none; display: flex; flex-direction: column; gap: 12px;">
+            <!-- Populated live from localStorage -->
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Quick Actions</h3>
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+            <button class="btn" onclick="location.href='focus.html'">⏱️ Start Focus Session</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="location.href='planner.html'">➕ Add Study Task</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="location.href='notes.html'">📝 Create Note</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Persistent Theme Handling
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const savedTheme = localStorage.getItem('auraway_theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
+    });
+
+    // Dynamic Date & Greeting
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDateText').textContent = now.toLocaleDateString(undefined, options);
+
+    const hour = now.getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greetingText').textContent = `${greeting}, Student! 👋`;
+
+    // Load Real Data from LocalStorage
+    const tasks = JSON.parse(localStorage.getItem('auraway_tasks')) || [];
+    const focusStats = JSON.parse(localStorage.getItem('auraway_focus_stats')) || { totalMinutes: 0, sessions: 0 };
+    const assignments = JSON.parse(localStorage.getItem('auraway_assignments')) || [];
+    const waterCups = parseInt(localStorage.getItem('auraway_water')) || 0;
+
+    // 1. Task Progress
+    const completedTasks = tasks.filter(t => t.completed).length;
+    const pct = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+    document.getElementById('dashCompletionPct').textContent = `${pct}%`;
+    document.getElementById('dashCompletionSub').textContent = `${completedTasks} of ${tasks.length} tasks completed`;
+
+    // 2. Focus Time
+    document.getElementById('dashFocusTime').textContent = `${focusStats.totalMinutes} mins`;
+    document.getElementById('dashFocusSub').textContent = `${focusStats.sessions} sessions completed`;
+
+    // 3. Pending Assignments & Wellness
+    const pendingAssign = assignments.filter(a => a.status !== 'Submitted').length;
+    document.getElementById('dashPendingAssign').textContent = `${pendingAssign} Due`;
+    document.getElementById('dashHydrationSub').textContent = `Hydration: ${waterCups}/8 cups today`;
+
+    // 4. Upcoming Tasks Preview
+    const dashTaskList = document.getElementById('dashTaskList');
+    const pendingTasks = tasks.filter(t => !t.completed).slice(0, 4);
+
+    if (pendingTasks.length === 0) {
+      dashTaskList.innerHTML = `<li style="color: var(--text-secondary); padding: 12px;">All caught up! No pending tasks in your planner.</li>`;
+    } else {
+      pendingTasks.forEach(task => {
+        const li = document.createElement('li');
+        li.style.cssText = 'padding: 12px; background: rgba(59,130,246,0.06); border-left: 4px solid var(--accent-primary); border-radius: 6px;';
+        li.innerHTML = `<strong>${task.subject}</strong> — ${task.title} <span style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-top:2px;">Due: ${task.date} &bull; ${task.priority} Priority</span>`;
+        dashTaskList.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>

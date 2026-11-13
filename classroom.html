@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURAWAY — Student Classroom</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <style>
+    .classroom-card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .code-prompt { max-width: 450px; margin: 40px auto; text-align: center; background: var(--bg-primary); border: 1px solid var(--border-color); padding: 30px; border-radius: var(--radius); }
+    .input-field { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 14px; border-radius: var(--radius); font-size: 0.95rem; width: 100%; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <sidebar>
+      <div class="logo-area">AURAWAY</div>
+      <ul class="nav-links">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Planner</a></li>
+        <li><a href="classroom.html" class="active">🎓 Classroom</a></li>
+        <li><a href="portals.html">🏫 Teacher Portal</a></li>
+        <li><a href="settings.html">⚙️ Settings</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Student Classroom 🎓</h1>
+          <p>View live cloud assignments assigned by your teacher.</p>
+        </div>
+        <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.8rem;" onclick="changeStudentCode()">Change Code</button>
+      </div>
+
+      <!-- Student Code Entry Box (Shown if code not set) -->
+      <div id="codePromptSection" class="code-prompt" style="display: none;">
+        <h3>Enter Your Student Access Code</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 6px;">Enter the code provided by your teacher (e.g. CLASS8A-4921).</p>
+        <input type="text" id="studentCodeInput" class="input-field" placeholder="Enter Access Code...">
+        <button class="btn" style="margin-top: 14px; width: 100%;" onclick="saveStudentCode()">Access Classroom</button>
+      </div>
+
+      <!-- Classroom Content (Shown when code is active) -->
+      <div id="classroomContent">
+        <div class="card" style="margin-bottom: 24px;">
+          <h3>Active Student Session</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem;">Logged in with Code: <strong id="activeCodeDisplay" style="color: #10b981;"></strong></p>
+        </div>
+
+        <div class="card">
+          <h3>Cloud Homework & Assignments</h3>
+          <div id="assignmentsList" style="margin-top: 14px;">
+            <p style="color: var(--text-secondary);">Loading assignments from Supabase...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Theme setup
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
+    themeToggle.addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('auraway_theme', next);
+    });
+
+    // Student Code Handling
+    function checkStudentSession() {
+      const savedCode = localStorage.getItem('auraway_student_code');
+      if (!savedCode) {
+        document.getElementById('codePromptSection').style.display = 'block';
+        document.getElementById('classroomContent').style.display = 'none';
+      } else {
+        document.getElementById('codePromptSection').style.display = 'none';
+        document.getElementById('classroomContent').style.display = 'block';
+        document.getElementById('activeCodeDisplay').textContent = savedCode;
+        fetchCloudAssignments(savedCode);
+      }
+    }
+
+    window.saveStudentCode = function() {
+      const code = document.getElementById('studentCodeInput').value.trim().toUpperCase();
+      if (!code) {
+        alert('Please enter a valid code.');
+        return;
+      }
+      localStorage.setItem('auraway_student_code', code);
+      checkStudentSession();
+    };
+
+    window.changeStudentCode = function() {
+      localStorage.removeItem('auraway_student_code');
+      checkStudentSession();
+    };
+
+    // Fetch Assignments from Supabase matching 'ALL' or student's specific code
+    async function fetchCloudAssignments(code) {
+      const container = document.getElementById('assignmentsList');
+      
+      const { data, error } = await supabaseClient
+        .from('assignments')
+        .select('*')
+        .or(`target_code.eq.ALL,target_code.eq.${code}`)
+        .order('due_date', { ascending: true });
+
+      if (error) {
+        container.innerHTML = `<p style="color: #ef4444;">Error loading cloud assignments: ${error.message}</p>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary);">No active homework assigned right now. Great job!</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'classroom-card';
+        div.innerHTML = `
+          <div>
+            <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 700;">${item.subject} &bull; Due: ${item.due_date}</span>
+            <h4 style="font-size: 1.05rem; margin-top: 2px;">${item.title}</h4>
+          </div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.15); padding: 4px 10px; border-radius: 6px;">${item.status}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    checkStudentSession();
+  </script>
+</body>
+</html>
+

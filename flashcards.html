@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURAWAY — Flashcards & Quiz Centre</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .fc-form {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 1.5fr auto;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    @media (max-width: 768px) {
+      .fc-form {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+    }
+    /* Interactive Flip Card Stage */
+    .practice-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 12px;
+    }
+    .flip-card {
+      width: 100%;
+      max-width: 520px;
+      min-height: 220px;
+      background: var(--bg-primary);
+      border: 2px solid var(--accent-primary);
+      border-radius: var(--radius);
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      box-shadow: var(--shadow);
+    }
+    .flip-card.flipped {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.06);
+    }
+    .card-side-label {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+    .card-subject-pill {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent-primary);
+    }
+    .deck-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation Sidebar -->
+    <sidebar>
+      <div class="logo-area">AURAWAY</div>
+      <ul class="nav-links">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="exams.html">🎯 Exams</a></li>
+        <li><a href="flashcards.html" class="active">🗂️ Flashcards</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html">🌱 Wellness</a></li>
+        <li><a href="progress.html">🏆 Progress</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Flashcards & Quiz Centre 🗂️</h1>
+          <p>Create your own revision cards, flip to test recall, and track mastery.</p>
+        </div>
+      </div>
+
+      <!-- Practice & Self-Quiz Stage -->
+      <div class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <h3>Active Study Deck</h3>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <select id="practiceFilter" class="input-field" style="padding: 6px 12px; font-size: 0.85rem;">
+              <option value="All">All Subjects</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Physics">Physics</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Social Science">Social Science</option>
+              <option value="English">English</option>
+            </select>
+            <span id="scoreCounter" style="font-size: 0.85rem; font-weight: 700; color: #10b981;">Mastered: 0 / 0</span>
+          </div>
+        </div>
+
+        <div class="practice-stage">
+          <div id="flashcardBox" class="flip-card" onclick="flipCard()">
+            <span id="cardSideLabel" class="card-side-label">FRONT (QUESTION)</span>
+            <span id="cardSubjectPill" class="card-subject-pill">Subject</span>
+            <p id="cardMainText" style="font-size: 1.25rem; font-weight: 600; line-height: 1.5; margin-top: 12px;">Tap to flip card</p>
+            <span style="position: absolute; bottom: 12px; font-size: 0.78rem; color: var(--text-secondary);">Tap card to flip</span>
+          </div>
+
+          <!-- Practice Controls -->
+          <div style="display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; justify-content: center;">
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="prevCard()">⬅️ Prev</button>
+            <button class="btn" style="background: #f59e0b;" onclick="markCard(false)">Need Review</button>
+            <button class="btn" style="background: #10b981;" onclick="markCard(true)">Got It ✔️</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="nextCard()">Next ➡️</button>
+          </div>
+          <p id="cardIndexText" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 10px;">Card 1 of 1</p>
+        </div>
+      </div>
+
