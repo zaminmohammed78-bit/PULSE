@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURAWAY — Focus Centre & Pomodoro</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     .timer-card {
       text-align: center;
@@ -74,9 +74,9 @@
         <!-- Timer Card -->
         <div class="card timer-card">
           <div class="timer-modes">
-            <button class="mode-btn active" onclick="setTimerMode(25, 'focus')">Focus (25m)</button>
-            <button class="mode-btn" onclick="setTimerMode(5, 'short')">Short Break (5m)</button>
-            <button class="mode-btn" onclick="setTimerMode(15, 'long')">Long Break (15m)</button>
+            <button class="mode-btn active" onclick="setTimerMode(25, 'focus', this)">Focus (25m)</button>
+            <button class="mode-btn" onclick="setTimerMode(5, 'short', this)">Short Break (5m)</button>
+            <button class="mode-btn" onclick="setTimerMode(15, 'long', this)">Long Break (15m)</button>
           </div>
 
           <div id="timerDisplay" class="timer-display">25:00</div>
@@ -113,9 +113,11 @@
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
     const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
     themeToggle.addEventListener('click', () => {
-      const currentTheme = html.getAttribute('data-theme');
-      html.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
     });
 
     // Pomodoro Timer Logic
@@ -139,7 +141,7 @@
       timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    window.setTimerMode = function(mins, mode) {
+    window.setTimerMode = function(mins, mode, trigger) {
       clearInterval(timerInterval);
       isRunning = false;
       startBtn.textContent = 'Start Session';
@@ -149,7 +151,7 @@
 
       // Update active button state
       document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
+      if (trigger) trigger.classList.add('active');
     };
 
     window.toggleTimer = function() {

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURAWAY — Flashcards & Quiz Centre</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     .fc-form {
       display: grid;
@@ -97,7 +97,7 @@
       <ul class="nav-links">
         <li><a href="index.html">📊 Dashboard</a></li>
         <li><a href="planner.html">📅 Study Planner</a></li>
-        <li><a href="exams.html">🎯 Exams</a></li>
+        <li><a href="exam.html">🎯 Exams</a></li>
         <li><a href="flashcards.html" class="active">🗂️ Flashcards</a></li>
         <li><a href="classroom.html">🎓 Classroom</a></li>
         <li><a href="focus.html">⏱️ Focus Centre</a></li>
@@ -153,3 +153,33 @@
         </div>
       </div>
 
+
+      <div class="card">
+        <h3>Create a Flashcard</h3>
+        <form id="flashcardForm" class="fc-form">
+          <select id="flashcardSubject" class="input-field" required><option>Mathematics</option><option>Physics</option><option>Chemistry</option><option>Social Science</option><option>English</option></select>
+          <input id="flashcardFront" class="input-field" type="text" placeholder="Question / Front" required>
+          <input id="flashcardBack" class="input-field" type="text" placeholder="Answer / Back" required>
+          <button class="btn" type="submit">Add Card</button>
+        </form>
+        <h3 style="margin-top:24px;">Your Flashcards</h3><div id="deckList" style="margin-top:12px;"></div>
+      </div>
+    </main></div>
+  <script>
+    const themeToggle=document.getElementById('themeToggle'), html=document.documentElement;
+    html.setAttribute('data-theme',localStorage.getItem('auraway_theme')||'dark');
+    themeToggle.addEventListener('click',()=>{const next=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',next);localStorage.setItem('auraway_theme',next);});
+    let cards=[];try{cards=JSON.parse(localStorage.getItem('auraway_flashcards'))||[]}catch(e){cards=[]}
+    let index=0,flipped=false,filtered=[];
+    const box=document.getElementById('flashcardBox'),filter=document.getElementById('practiceFilter'),deck=document.getElementById('deckList');
+    function getFiltered(){return cards.filter(c=>filter.value==='All'||c.subject===filter.value)}
+    function renderCard(){filtered=getFiltered();if(index>=filtered.length)index=Math.max(0,filtered.length-1);const c=filtered[index];document.getElementById('cardMainText').textContent=c?(flipped?c.back:c.front):'No flashcards yet. Add one below.';document.getElementById('cardSideLabel').textContent=c?(flipped?'BACK (ANSWER)':'FRONT (QUESTION)'):'YOUR STUDY DECK';document.getElementById('cardSubjectPill').textContent=c?c.subject:'No cards';document.getElementById('cardIndexText').textContent='Card '+(c?index+1:0)+' of '+filtered.length;document.getElementById('scoreCounter').textContent='Mastered: '+filtered.filter(x=>x.mastered).length+' / '+filtered.length;box.classList.toggle('flipped',!!c&&flipped)}
+    function renderDeck(){deck.replaceChildren();if(!cards.length){deck.textContent='No flashcards saved yet.';return}cards.forEach(c=>{const row=document.createElement('div');row.className='deck-item';const info=document.createElement('div'),q=document.createElement('strong'),meta=document.createElement('p');q.textContent=c.front;meta.textContent=c.subject+' • '+(c.mastered?'Mastered':'Needs review');info.append(q,meta);const del=document.createElement('button');del.className='btn';del.textContent='Delete';del.addEventListener('click',()=>{cards=cards.filter(x=>x.id!==c.id);index=0;save()});row.append(info,del);deck.append(row)})}
+    function save(){localStorage.setItem('auraway_flashcards',JSON.stringify(cards));renderDeck();renderCard()}
+    window.flipCard=()=>{if(filtered.length){flipped=!flipped;renderCard()}};
+    window.nextCard=()=>{if(filtered.length){index=(index+1)%filtered.length;flipped=false;renderCard()}};
+    window.prevCard=()=>{if(filtered.length){index=(index-1+filtered.length)%filtered.length;flipped=false;renderCard()}};
+    window.markCard=mastered=>{const c=filtered[index];if(!c)return;cards=cards.map(x=>x.id===c.id?{...x,mastered}:x);save();if(index<filtered.length-1)index++;flipped=false;renderCard()};
+    document.getElementById('flashcardForm').addEventListener('submit',e=>{e.preventDefault();cards.unshift({id:Date.now(),subject:document.getElementById('flashcardSubject').value,front:document.getElementById('flashcardFront').value.trim(),back:document.getElementById('flashcardBack').value.trim(),mastered:false});e.target.reset();index=0;save()});
+    filter.addEventListener('change',()=>{index=0;flipped=false;renderCard()});renderDeck();renderCard();
+  </script></body></html>

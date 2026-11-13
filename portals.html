@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURAWAY — Teacher Portal & Codes</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
+  <script src="supabase.js"></script>
   <style>
     .portal-form { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
     .input-field { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 14px; border-radius: var(--radius); font-size: 0.95rem; width: 100%; }
@@ -88,6 +88,7 @@
     // 1. Generate Student Code and Save to Supabase
     document.getElementById('studentCodeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!supabaseClient) { alert('Supabase is not configured. Add your project URL in supabase.js first.'); return; }
       const student_name = document.getElementById('regStudentName').value;
       const class_name = document.getElementById('regClassName').value;
       
@@ -110,6 +111,7 @@
     // 2. Publish Assignment to Supabase
     document.getElementById('cloudAssignForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!supabaseClient) { alert('Supabase is not configured. Add your project URL in supabase.js first.'); return; }
       const title = document.getElementById('hwTitle').value;
       const subject = document.getElementById('hwSubject').value;
       const due_date = document.getElementById('hwDueDate').value;
