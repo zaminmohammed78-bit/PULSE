@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURAWAY — School Portals</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <sidebar>
+      <div class="logo-area">AURAWAY</div>
+      <ul class="nav-links">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="portals.html" class="active">🏫 Portals</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top:auto;">Theme</button>
+    </sidebar>
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>School Portals 🏫</h1>
+          <p>Choose the portal that matches your role.</p>
+        </div>
+      </div>
+      <div class="grid-cards">
+        <section class="card">
+          <h3>👩‍🏫 Teacher Portal</h3>
+          <p style="color:var(--text-secondary); margin-bottom:16px;">Manage student access codes, update student information, and assign homework.</p>
+          <a class="btn" href="teacher.html" style="display:inline-block;text-decoration:none;">Open Teacher Portal</a>
+        </section>
+        <section class="card">
+          <h3>👨‍👩‍👧 Parent Portal</h3>
+          <p style="color:var(--text-secondary); margin-bottom:16px;">View your child's study information, teacher feedback, attendance, and homework status.</p>
+          <a class="btn" href="parent.html" style="display:inline-block;text-decoration:none;">Open Parent Portal</a>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script>
+    const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('auraway_theme', next);
+    });
+  </script>
+</body>
+</html>
