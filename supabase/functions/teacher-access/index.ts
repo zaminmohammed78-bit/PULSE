@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!teacher) {
-      const randomPassword = crypto.randomUUID() + crypto.randomUUID() + "Aa1!";
+      const randomPassword = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "") + "Aa1!";
       const { data, error } = await admin.auth.admin.createUser({
         email,
         password: randomPassword,
