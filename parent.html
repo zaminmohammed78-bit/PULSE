@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURAWAY — Parent Portal</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <style>
+    body { background: var(--bg-primary); color: var(--text-primary); }
+    .standalone-wrap { max-width: 850px; margin: 0 auto; padding: 24px 16px; }
+    .input-field { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 14px; border-radius: var(--radius); font-size: 0.95rem; width: 100%; }
+    .stat-box { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 16px; border-radius: var(--radius); }
+    .hw-row { padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  </style>
+</head>
+<body>
+  <div class="standalone-wrap">
+    <div class="header-bar" style="margin-bottom: 24px;">
+      <div class="welcome-title">
+        <h1>AURAWAY — Parent Portal 👨‍👩‍👧</h1>
+        <p>Track your child's studying, attendance, teacher requests, and improvement areas.</p>
+      </div>
+      <button class="btn" id="themeToggle">Theme</button>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+      <h3>🔑 Enter Your Child's Student Code</h3>
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin: 6px 0 12px;">Use the access code issued by your child's teacher.</p>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="parentCodeInput" class="input-field" placeholder="e.g. CLASS8A-4921" style="text-transform:uppercase;">
+        <button class="btn" onclick="loadParentView()">View Report</button>
+      </div>
+    </div>
+
+    <div id="parentReportCard" style="display: none;">
+      <div class="card" style="margin-bottom: 16px;">
+        <h2 id="pStudentName">Student Name</h2>
+        <p style="color:var(--text-secondary);" id="pStudentClass">Class &bull; Code</p>
+      </div>
+
+      <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 16px;">
+        <div class="stat-box">
+          <small style="color:var(--text-secondary);">📖 Studying & Activity</small>
+          <h3 id="pStudyHours" style="margin-top:6px;">--</h3>
+        </div>
+        <div class="stat-box">
+          <small style="color:var(--text-secondary);">📅 Attendance</small>
+          <h3 id="pAttendance" style="margin-top:6px; color:#10b981;">--</h3>
+        </div>
+      </div>
+
+      <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-bottom: 16px;">
+        <div class="card">
+          <h3>📩 Teacher's Requests</h3>
+          <p id="pTeacherReq" style="margin-top:10px; line-height:1.5;">--</p>
+        </div>
+        <div class="card">
+          <h3>🎯 What to Improve</h3>
+          <p id="pImprove" style="margin-top:10px; line-height:1.5;">--</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📚 Assigned Homework Status</h3>
+        <div id="pHomeworkList" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('auraway_theme', next);
+    });
+
+    async function loadParentView() {
+      const code = document.getElementById('parentCodeInput').value.trim().toUpperCase();
+      if (!code) return alert('Please enter your child’s student code.');
+
+      const { data, error } = await supabaseClient.from('students').select('*').eq('student_code', code).maybeSingle();
+      if (error || !data) return alert('❌ Invalid code. Check the exact code with your teacher.');
+
+      document.getElementById('pStudentName').textContent = data.student_name;
+      document.getElementById('pStudentClass').textContent = `${data.class_name} • Code: ${data.student_code}`;
+      document.getElementById('pStudyHours').textContent = data.study_hours || '0 hrs';
+      document.getElementById('pAttendance').textContent = data.attendance_pct || '100%';
+      document.getElementById('pTeacherReq').textContent = data.teacher_request || 'No teacher requests.';
+      document.getElementById('pImprove').textContent = data.areas_to_improve || 'Doing well!';
+
+      // Load homework & completion status
+      const [{ data: hw }, { data: done }] = await Promise.all([
+        supabaseClient.from('assignments').select('*').or(`target_code.eq.ALL,target_code.eq.${code}`).order('due_date', { ascending: true }),
+        supabaseClient.from('student_updates').select('assignment_id').eq('student_code', code).eq('status', 'Completed')
+      ]);
+
+      const doneIds = new Set((done || []).map(d => d.assignment_id));
+      const hwContainer = document.getElementById('pHomeworkList');
+      if (!hw || hw.length === 0) {
+        hwContainer.innerHTML = '<p style="color:var(--text-secondary);">No homework assigned right now.</p>';
+      } else {
+        hwContainer.innerHTML = '';
+        hw.forEach(item => {
+          const isDone = doneIds.has(item.id);
+          const div = document.createElement('div');
+          div.className = 'hw-row';
+          div.innerHTML = `
+            <div>
+              <strong>${item.title}</strong> <span style="font-size:0.8rem; color:var(--text-secondary);">(${item.subject} • Due: ${item.due_date})</span>
+            </div>
+            <span style="font-size:0.8rem; font-weight:700; color:${isDone ? '#10b981' : '#f59e0b'};">${isDone ? '✅ Completed' : '⏳ Pending'}</span>
+          `;
+          hwContainer.appendChild(div);
+        });
+      }
+
+      document.getElementById('parentReportCard').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
