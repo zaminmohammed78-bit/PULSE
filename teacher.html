@@ -17,7 +17,7 @@
     .stat-box { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 14px; border-radius: var(--radius); }
   </style>
 </head>
-<body>
+<body class="pulse-teacher-portal">
   <section id="teacherLoginPanel" class="standalone-wrap" style="max-width:440px;">
     <div class="card">
       <h1>PULSE — Teacher Sign In 👩‍🏫</h1>
@@ -43,7 +43,7 @@
       <button class="btn" id="themeToggle">Theme</button>
     </div>
 
-    <nav aria-label="Teacher portal sections" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px;">
+    <nav class="portal-section-nav" aria-label="Teacher portal sections" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px;">
       <button type="button" class="btn" onclick="document.getElementById('teacherStudentsSection').scrollIntoView({behavior:'smooth'})">👥 Students</button>
       <button type="button" class="btn" onclick="document.getElementById('teacherAttendanceManager').scrollIntoView({behavior:'smooth'})">📋 Attendance</button>
       <button type="button" class="btn" style="background:#0f766e;" onclick="document.getElementById('teacherAssignmentsSection').scrollIntoView({behavior:'smooth'})">📚 Assignments</button>
