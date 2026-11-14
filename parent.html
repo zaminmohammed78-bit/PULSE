@@ -102,36 +102,42 @@
     });
 
     async function loadParentView() {
-      const code = document.getElementById('parentCodeInput').value.trim().toUpperCase();
+      const input = document.getElementById('parentCodeInput');
+      const code = input.value.trim().toUpperCase();
       if (!code) return alert('Please enter your child’s student code.');
 
-      const { data, error } = await supabaseClient.from('students').select('*').eq('student_code', code).maybeSingle();
-      if (error || !data) return alert('❌ Invalid code. Check the exact code with your teacher.');
+      const button = document.querySelector('.parent-access-form button');
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Checking…';
 
-      document.getElementById('pStudentName').textContent = data.student_name;
-      document.getElementById('pStudentClass').textContent = `${data.class_name} • Code: ${data.student_code}`;
-      document.getElementById('pStudyHours').textContent = data.study_hours || 'Not recorded';
-      document.getElementById('pAttendance').textContent = 'Loading…';
-      document.getElementById('pTeacherReq').textContent = data.teacher_request || 'No teacher requests.';
-      document.getElementById('pImprove').textContent = data.areas_to_improve || 'Doing well!';
+      try {
+        const { data: report, error } = await supabaseClient.functions.invoke('parent-report', {
+          body: { student_code: code }
+        });
+        if (error || !report?.success || !report?.student) {
+          const message = report?.error || error?.message || 'Unable to verify this code right now.';
+          alert(message);
+          return;
+        }
 
-      // Load the same teacher-managed attendance shown in the student portal.
-      const { data: attendanceRows, error: attendanceError } = await supabaseClient
-        .rpc('get_student_attendance', { p_student_code: code });
-      const attendanceBox = document.getElementById('pAttendanceHistory');
-      if (attendanceError) {
-        attendanceBox.textContent = 'Attendance setup is not complete yet. Please contact the teacher.';
-      } else {
-        const rows = attendanceRows || [];
+        const student = report.student;
+        document.getElementById('pStudentName').textContent = student.student_name || 'Student';
+        document.getElementById('pStudentClass').textContent = (student.class_name || 'Class not recorded') + ' • Code: ' + student.student_code;
+        document.getElementById('pStudyHours').textContent = student.study_hours || 'Not recorded';
+        document.getElementById('pTeacherReq').textContent = student.teacher_request || 'No teacher requests.';
+        document.getElementById('pImprove').textContent = student.areas_to_improve || 'Doing well!';
+
+        const rows = Array.isArray(report.attendance) ? report.attendance : [];
         const presentDays = rows.filter(row => String(row.status).toLowerCase() === 'present').length;
-        const absentDays = rows.filter(row => String(row.status).toLowerCase() === 'absent').length;
         const percentage = rows.length ? Math.round((presentDays / rows.length) * 100) : null;
-        document.getElementById('pAttendanceRecordCount').textContent = rows.length + (rows.length === 1 ? ' record' : ' records');
         document.getElementById('pAttendance').textContent = percentage === null ? 'No records yet' : percentage + '%';
+        document.getElementById('pAttendanceRecordCount').textContent = rows.length + (rows.length === 1 ? ' record' : ' records');
+        const attendanceBox = document.getElementById('pAttendanceHistory');
+        attendanceBox.replaceChildren();
         if (!rows.length) {
           attendanceBox.textContent = 'No attendance records have been added by the teacher yet.';
         } else {
-          attendanceBox.innerHTML = '';
           rows.forEach(row => {
             const line = document.createElement('div');
             line.className = 'hw-row';
@@ -140,47 +146,31 @@
             const status = document.createElement('span');
             status.textContent = row.status;
             status.style.fontWeight = '700';
-            status.style.color = row.status === 'Present' ? '#10b981' : row.status === 'Absent' ? '#ef4444' : '#f59e0b';
+            status.style.color = String(row.status).toLowerCase() === 'present' ? '#10b981' : String(row.status).toLowerCase() === 'absent' ? '#ef4444' : '#f59e0b';
             line.append(date, status);
             attendanceBox.appendChild(line);
           });
         }
-      }
 
-      // Load homework & completion status
-      const [{ data: hw, error: homeworkError }, { data: updates, error: updatesError }] = await Promise.all([
-        supabaseClient.from('assignments').select('*').order('due_date', { ascending: true }),
-        supabaseClient.from('student_updates')
-          .select('assignment_id,status,updated_at')
-          .eq('student_code', code)
-          .in('status', ['Completed', 'Not Completed'])
-          .order('updated_at', { ascending: false })
-      ]);
-
-      const latestStatus = new Map();
-      (updates || []).forEach(update => {
-        if (!latestStatus.has(update.assignment_id)) latestStatus.set(update.assignment_id, update.status);
-      });
-      const hwContainer = document.getElementById('pHomeworkList');
-      if (homeworkError || updatesError) {
-        hwContainer.textContent = 'Could not load homework status. Please try again later.';
-      } else {
-        const visibleHomework = (hw || []).filter(item =>
-          item.target_code === 'ALL' ||
-          item.target_code === code ||
-          (data.class_name && item.target_code === 'CLASS:' + data.class_name)
-        );
-        const completedCount = visibleHomework.filter(item => latestStatus.get(item.id) === 'Completed').length;
-        const pendingCount = visibleHomework.length - completedCount;
+        const assignments = Array.isArray(report.assignments) ? report.assignments : [];
+        const updates = Array.isArray(report.updates) ? report.updates : [];
+        const latestStatus = new Map();
+        updates.forEach(update => {
+          if (!latestStatus.has(update.assignment_id)) latestStatus.set(update.assignment_id, update.status);
+        });
+        const completedCount = assignments.filter(item => latestStatus.get(item.id) === 'Completed').length;
+        const pendingCount = assignments.length - completedCount;
         document.getElementById('pHomeworkCompleted').textContent = completedCount;
         document.getElementById('pHomeworkPending').textContent = pendingCount;
-        document.getElementById('pHomeworkProgressLabel').textContent = visibleHomework.length ? completedCount + ' / ' + visibleHomework.length + ' completed' : 'No assignments';
-        document.getElementById('pHomeworkProgressBar').style.width = visibleHomework.length ? Math.round(completedCount / visibleHomework.length * 100) + '%' : '0%';
-        if (!visibleHomework.length) {
+        document.getElementById('pHomeworkProgressLabel').textContent = assignments.length ? completedCount + ' / ' + assignments.length + ' completed' : 'No assignments';
+        document.getElementById('pHomeworkProgressBar').style.width = assignments.length ? Math.round(completedCount / assignments.length * 100) + '%' : '0%';
+
+        const hwContainer = document.getElementById('pHomeworkList');
+        hwContainer.replaceChildren();
+        if (!assignments.length) {
           hwContainer.textContent = 'No homework assigned right now.';
         } else {
-          hwContainer.innerHTML = '';
-          visibleHomework.forEach(item => {
+          assignments.forEach(item => {
             const isDone = latestStatus.get(item.id) === 'Completed';
             const div = document.createElement('div');
             div.className = 'hw-row';
@@ -199,9 +189,15 @@
             hwContainer.appendChild(div);
           });
         }
-      }
 
-      document.getElementById('parentReportCard').style.display = 'block';
+        document.getElementById('parentReportCard').style.display = 'block';
+      } catch (error) {
+        console.error('Parent report lookup failed:', error);
+        alert('Could not connect to the Parent Portal. Please try again.');
+      } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
     }
   </script>
 </body>
