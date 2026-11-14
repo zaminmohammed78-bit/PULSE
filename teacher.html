@@ -297,7 +297,7 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="code-badge">${st.student_code}</span>
             <button class="btn" style="padding:4px 10px; font-size:0.75rem;" onclick="quickSelectStudent(${st.id})">Edit</button>
-            <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#0f766e;" onclick="createStudentLogin(${st.id})">${st.auth_user_id ? 'Reset Login' : 'Issue Login'}</button>
+            <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#0f766e;" onclick="createStudentLogin(${st.id})">${st.auth_user_id ? 'Change Password' : 'Set Password'}</button>
             <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#ef4444;" onclick="deleteStudent(${st.id}, '${st.student_name.replace(/'/g, "\\'")}')">Delete</button>
           </div>
         `;
@@ -658,22 +658,37 @@
       const codeDisplay = document.getElementById('generatedCodeDisplay');
       const passwordDisplay = document.getElementById('generatedLoginPassword');
       const info = document.getElementById('generatedLoginInfo');
+
+      const password = window.prompt('Create a permanent password for this student (at least 10 characters). To change it later, use Reset / Change Password again:');
+      if (password === null) return;
+      if (password.length < 10 || password.length > 72) {
+        alert('Please use a password between 10 and 72 characters.');
+        return;
+      }
+      const confirmation = window.prompt('Re-enter the password to confirm:');
+      if (confirmation === null) return;
+      if (password !== confirmation) {
+        alert('The passwords do not match. Please try again.');
+        return;
+      }
+
       banner.style.display = 'block';
-      passwordDisplay.textContent = 'Generating secure password…';
-      info.textContent = 'Please wait. Keep the password private.';
+      passwordDisplay.textContent = 'Saving permanent password…';
+      info.textContent = 'Please wait. The password is stored securely by Supabase Auth.';
       const { data, error } = await supabaseClient.functions.invoke('student-account-manager', {
-        body: { student_id: studentId }
+        body: { student_id: studentId, password }
       });
       if (error || !data?.success) {
         passwordDisplay.textContent = '';
-        info.textContent = 'Student record saved, but login setup failed: ' + (data?.error || error?.message || 'Unknown error') + '. Try Issue / Reset Login again.';
+        info.textContent = 'Password setup failed: ' + (data?.error || error?.message || 'Unknown error') + '. Try again.';
         return;
       }
       codeDisplay.textContent = data.student_code;
-      passwordDisplay.textContent = 'Temporary password: ' + data.temporary_password;
-      window.PULSE_LAST_STUDENT_CREDENTIALS = { code: data.student_code, password: data.temporary_password, name: data.student_name };
-      document.getElementById('copyStudentCredentials').style.display = 'inline-flex';
-      info.textContent = 'Share this code and password privately with ' + data.student_name + '. Reset Login creates a new password and invalidates the old one.';
+      passwordDisplay.textContent = 'Permanent password saved successfully.';
+      window.PULSE_LAST_STUDENT_CREDENTIALS = { code: data.student_code, name: data.student_name };
+      document.getElementById('copyStudentCredentials').style.display = 'none';
+      info.textContent = 'Give the student their code and the password you just created. The password will stay valid until you change it here.';
+      alert('Permanent student password saved. Share the password securely with the student now; PULSE will not show it again.');
     }
 
     document.getElementById('editStudentsForm').addEventListener('submit', async (e) => {
