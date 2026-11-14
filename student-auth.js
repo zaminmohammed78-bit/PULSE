@@ -37,9 +37,7 @@ function setActiveStudent(student) {
   }
 
   const { data, error } = await supabaseClient
-    .from('students')
-    .select('*')
-    .eq('student_code', savedCode)
+    .rpc('get_student_profile_by_code', { p_student_code: savedCode })
     .maybeSingle();
 
   if (error) {
@@ -120,9 +118,7 @@ async function verifyGlobalStudentCode(event) {
   btn.disabled = true;
   btn.textContent = 'Checking code…';
   const { data, error } = await supabaseClient
-    .from('students')
-    .select('*')
-    .eq('student_code', code)
+    .rpc('get_student_profile_by_code', { p_student_code: code })
     .maybeSingle();
 
   if (error || !data) {
