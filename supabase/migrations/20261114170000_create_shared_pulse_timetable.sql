@@ -17,27 +17,30 @@ create index if not exists pulse_timetable_day_time_idx on public.pulse_timetabl
 create index if not exists pulse_timetable_updated_by_idx on public.pulse_timetable (updated_by);
 
 alter table public.pulse_timetable enable row level security;
-
 revoke all on table public.pulse_timetable from anon, public, authenticated;
 grant select, insert, update, delete on table public.pulse_timetable to authenticated;
 grant all on table public.pulse_timetable to service_role;
 
+drop policy if exists "Students and teachers can view timetable" on public.pulse_timetable;
 create policy "Students and teachers can view timetable"
   on public.pulse_timetable for select to authenticated
   using (
     public.is_auraway_teacher()
-    or exists (select 1 from public.students s where s.auth_user_id = (select auth.uid()))
+    or (select auth.jwt() -> 'app_metadata' ->> 'role') = 'student'
   );
 
+drop policy if exists "Only teachers can add timetable periods" on public.pulse_timetable;
 create policy "Only teachers can add timetable periods"
   on public.pulse_timetable for insert to authenticated
   with check (public.is_auraway_teacher() and updated_by = (select auth.uid()));
 
+drop policy if exists "Only teachers can edit timetable periods" on public.pulse_timetable;
 create policy "Only teachers can edit timetable periods"
   on public.pulse_timetable for update to authenticated
   using (public.is_auraway_teacher())
   with check (public.is_auraway_teacher() and updated_by = (select auth.uid()));
 
+drop policy if exists "Only teachers can delete timetable periods" on public.pulse_timetable;
 create policy "Only teachers can delete timetable periods"
   on public.pulse_timetable for delete to authenticated
   using (public.is_auraway_teacher());
