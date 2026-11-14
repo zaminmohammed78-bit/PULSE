@@ -64,6 +64,8 @@
         <div id="newCodeBanner" style="display:none; margin-top:12px; padding:12px; border:1px dashed #10b981; border-radius:var(--radius); text-align:center;">
           <small>Share this login code with the Student & Parent:</small>
           <h2 id="generatedCodeDisplay" style="color:#10b981; margin:4px 0;"></h2>
+          <p id="generatedLoginPassword" style="margin-top:8px;font-weight:700;word-break:break-all;"></p>
+          <small id="generatedLoginInfo" style="display:block;margin-top:6px;color:var(--text-secondary);">Keep the student password private and share it directly with the student.</small>
         </div>
       </div>
 
@@ -182,6 +184,11 @@
     const TEACHER_AUTH_FUNCTION_URL = 'https://iazlemocpuhzwtrkyfgw.supabase.co/functions/v1/bright-handler';
 
     async function showTeacherPortal(session) {
+      if (session?.user?.email?.toLowerCase() !== 'teacher@auraway.app') {
+        await supabaseClient.auth.signOut();
+        document.getElementById('teacherLoginError').textContent = 'This account is not authorized for the teacher portal.';
+        return;
+      }
       const name = session.user.user_metadata?.display_name || 'Teacher';
       document.getElementById('teacherLoginPanel').style.display = 'none';
       document.getElementById('teacherPortalContent').style.display = 'block';
@@ -244,7 +251,8 @@
         return;
       }
       const { data } = await supabaseClient.auth.getSession();
-      if (data.session) await showTeacherPortal(data.session);
+      if (data.session?.user?.email?.toLowerCase() === 'teacher@auraway.app') await showTeacherPortal(data.session);
+      else if (data.session) await supabaseClient.auth.signOut();
     })();
 
     const html = document.documentElement;
@@ -288,6 +296,7 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="code-badge">${st.student_code}</span>
             <button class="btn" style="padding:4px 10px; font-size:0.75rem;" onclick="quickSelectStudent(${st.id})">Edit</button>
+            <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#0f766e;" onclick="createStudentLogin(${st.id})">${st.auth_user_id ? 'Reset Login' : 'Issue Login'}</button>
             <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#ef4444;" onclick="deleteStudent(${st.id}, '${st.student_name.replace(/'/g, "\\'")}')">Delete</button>
           </div>
         `;
@@ -617,14 +626,40 @@
       const class_name = document.getElementById('newClassName').value.trim();
       const code = `${class_name.replace(/\s+/g, '').toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const { error } = await supabaseClient.from('students').insert([{ student_name, class_name, student_code: code }]);
+      const { data: createdStudent, error } = await supabaseClient.from('students')
+        .insert([{ student_name, class_name, student_code: code }])
+        .select('id')
+        .single();
       if (error) return alert('Error: ' + error.message);
 
       document.getElementById('generatedCodeDisplay').textContent = code;
+      document.getElementById('generatedLoginPassword').textContent = 'Creating secure student login…';
       document.getElementById('newCodeBanner').style.display = 'block';
       e.target.reset();
-      loadStudentsRoster();
+      await createStudentLogin(createdStudent.id);
+      await loadStudentsRoster();
     });
+
+    async function createStudentLogin(studentId) {
+      const banner = document.getElementById('newCodeBanner');
+      const codeDisplay = document.getElementById('generatedCodeDisplay');
+      const passwordDisplay = document.getElementById('generatedLoginPassword');
+      const info = document.getElementById('generatedLoginInfo');
+      banner.style.display = 'block';
+      passwordDisplay.textContent = 'Generating secure password…';
+      info.textContent = 'Please wait. Keep the password private.';
+      const { data, error } = await supabaseClient.functions.invoke('student-account-manager', {
+        body: { student_id: studentId }
+      });
+      if (error || !data?.success) {
+        passwordDisplay.textContent = '';
+        info.textContent = 'Student record saved, but login setup failed: ' + (data?.error || error?.message || 'Unknown error') + '. Try Issue / Reset Login again.';
+        return;
+      }
+      codeDisplay.textContent = data.student_code;
+      passwordDisplay.textContent = 'Temporary password: ' + data.temporary_password;
+      info.textContent = 'Share this code and password privately with ' + data.student_name + '. Reset Login creates a new password and invalidates the old one.';
+    }
 
     document.getElementById('editStudentsForm').addEventListener('submit', async (e) => {
       e.preventDefault();
