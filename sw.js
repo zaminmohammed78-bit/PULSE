@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pulse-pwa-v3';
+const CACHE_NAME = 'pulse-pwa-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
