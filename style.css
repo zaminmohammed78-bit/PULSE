@@ -450,3 +450,44 @@ html[data-theme="dark"] .pulse-teacher-portal textarea,
 html[data-theme="dark"] .pulse-parent-portal input,
 html[data-theme="dark"] .pulse-parent-portal select,
 html[data-theme="dark"] .pulse-parent-portal textarea{color:#e2deeb}
+
+
+/* Global readable typography for every PULSE page in dark mode */
+html[data-theme="dark"]{
+  --text-primary:#c9c4d2;
+  --text-secondary:#a49daf;
+}
+html[data-theme="dark"] body{
+  color:#c9c4d2;
+}
+html[data-theme="dark"] body h1,
+html[data-theme="dark"] body h2,
+html[data-theme="dark"] body h3,
+html[data-theme="dark"] body h4,
+html[data-theme="dark"] body h5,
+html[data-theme="dark"] body h6{
+  color:#d8d2e2;
+}
+html[data-theme="dark"] body p,
+html[data-theme="dark"] body li,
+html[data-theme="dark"] body label,
+html[data-theme="dark"] body small,
+html[data-theme="dark"] body .welcome-title p{
+  color:var(--text-secondary);
+}
+html[data-theme="dark"] body strong,
+html[data-theme="dark"] body b,
+html[data-theme="dark"] body th,
+html[data-theme="dark"] body td{
+  color:var(--text-primary);
+}
+html[data-theme="dark"] body input,
+html[data-theme="dark"] body select,
+html[data-theme="dark"] body textarea{
+  color:var(--text-primary);
+}
+html[data-theme="dark"] body input::placeholder,
+html[data-theme="dark"] body textarea::placeholder{
+  color:#8f899d;
+  opacity:1;
+}
