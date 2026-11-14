@@ -1,159 +1,138 @@
-// Student code login with a device-local family account list.
-// Each sibling keeps their own teacher-issued code and dashboard profile.
-const FAMILY_KEY = 'auraway_family_students';
+// PULSE student authentication.
+// Student identity is established by a Supabase Auth session, never by localStorage alone.
+const PULSE_STUDENT_EMAIL_SUFFIX = "@students.pulse.app";
 
-function readFamilyStudents() {
-  try {
-    const value = JSON.parse(localStorage.getItem(FAMILY_KEY) || '[]');
-    return Array.isArray(value) ? value.filter(item => item && item.code && item.profile) : [];
-  } catch (_) {
-    return [];
+function pulseStudentEmail(code) {
+  return String(code || "").trim().toLowerCase() + PULSE_STUDENT_EMAIL_SUFFIX;
+}
+
+function pulseShowLogin(message = "") {
+  document.body.innerHTML = `
+    <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-primary,#0b0f19);color:var(--text-primary,#f9fafb);padding:20px;font-family:system-ui,sans-serif;">
+      <section style="max-width:420px;width:100%;background:var(--bg-card,#1f2937);border:1px solid var(--border-color,#374151);border-radius:16px;padding:28px;">
+        <h1 style="text-align:center;margin:0 0 8px;">PULSE 🎓</h1>
+        <p style="color:var(--text-secondary,#9ca3af);text-align:center;margin:0 0 20px;">Sign in with the student code and password given by your teacher.</p>
+        <form id="pulseStudentLoginForm" style="display:grid;gap:12px;">
+          <label for="pulseStudentCode">Student code</label>
+          <input id="pulseStudentCode" autocomplete="username" autocapitalize="characters" required placeholder="e.g. CLASS8-1234" style="width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-size:1rem;">
+          <label for="pulseStudentPassword">Student password</label>
+          <input id="pulseStudentPassword" type="password" autocomplete="current-password" required placeholder="Enter your password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-size:1rem;">
+          <p id="pulseStudentAuthError" role="alert" style="color:#f87171;font-size:.9rem;margin:0;min-height:1.2em;">${message.replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]))}</p>
+          <button id="pulseStudentLoginButton" type="submit" style="width:100%;padding:12px;border:0;border-radius:8px;background:#6366f1;color:white;font-weight:700;font-size:1rem;cursor:pointer;">Sign in securely</button>
+        </form>
+        <p style="font-size:.78rem;color:var(--text-secondary,#9ca3af);text-align:center;margin:14px 0 0;">Forgot your password? Ask your teacher to reset your student login.</p>
+      </section>
+    </main>`;
+
+  document.getElementById("pulseStudentLoginForm").addEventListener("submit", pulseStudentSignIn);
+}
+
+async function pulseStudentSignIn(event) {
+  event.preventDefault();
+  const codeInput = document.getElementById("pulseStudentCode");
+  const passwordInput = document.getElementById("pulseStudentPassword");
+  const errorBox = document.getElementById("pulseStudentAuthError");
+  const button = document.getElementById("pulseStudentLoginButton");
+  const code = codeInput.value.trim().toUpperCase();
+  const password = passwordInput.value;
+  if (!code || !password || !supabaseClient) {
+    errorBox.textContent = "Enter your student code and password.";
+    return;
   }
-}
 
-function saveFamilyStudents(items) {
-  localStorage.setItem(FAMILY_KEY, JSON.stringify(items));
-}
+  button.disabled = true;
+  button.textContent = "Signing in…";
+  errorBox.textContent = "";
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: pulseStudentEmail(code),
+    password
+  });
 
-function setActiveStudent(student) {
-  localStorage.setItem('auraway_student_code', student.code);
-  localStorage.setItem('auraway_student_profile', JSON.stringify(student.profile));
+  if (error || !data?.user) {
+    button.disabled = false;
+    button.textContent = "Sign in securely";
+    errorBox.textContent = "Sign-in failed. Check your code and password, or ask your teacher to reset them.";
+    passwordInput.value = "";
+    return;
+  }
+
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("students")
+    .select("id,student_name,class_name,student_code,study_hours,attendance_pct,teacher_request,areas_to_improve")
+    .eq("auth_user_id", data.user.id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    await supabaseClient.auth.signOut();
+    button.disabled = false;
+    button.textContent = "Sign in securely";
+    errorBox.textContent = "This login is not linked to an active student record. Please contact your teacher.";
+    return;
+  }
+
+  localStorage.setItem("auraway_student_code", profile.student_code);
+  localStorage.setItem("auraway_student_profile", JSON.stringify(profile));
   window.location.reload();
 }
 
-(async function enforceStudentLogin() {
-  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-  if (currentPage === 'teacher.html' || currentPage === 'parent.html' || currentPage === 'portals.html') return;
-
-  const savedCode = localStorage.getItem('auraway_student_code');
-  if (!savedCode) {
-    showStudentLoginGate();
-    return;
-  }
+async function pulseInitializeStudentAuth() {
+  const currentPage = window.location.pathname.split("/").pop() || "index.html";
+  if (["teacher.html", "parent.html", "portals.html"].includes(currentPage)) return;
 
   if (!supabaseClient) {
-    showStudentLoginGate('The student login service is unavailable. Please try again later.');
+    pulseShowLogin("The secure login service is unavailable. Please try again later.");
     return;
   }
 
-  const { data, error } = await supabaseClient
-    .rpc('get_student_profile_by_code', { p_student_code: savedCode })
+  const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+  const session = sessionData?.session;
+  if (sessionError || !session) {
+    localStorage.removeItem("auraway_student_code");
+    localStorage.removeItem("auraway_student_profile");
+    pulseShowLogin();
+    return;
+  }
+
+  const { data: profile, error } = await supabaseClient
+    .from("students")
+    .select("id,student_name,class_name,student_code,study_hours,attendance_pct,teacher_request,areas_to_improve")
+    .eq("auth_user_id", session.user.id)
     .maybeSingle();
 
-  if (error) {
-    showStudentLoginGate('Could not verify this code. Check your internet connection and try again.');
+  if (error || !profile) {
+    await supabaseClient.auth.signOut();
+    localStorage.removeItem("auraway_student_code");
+    localStorage.removeItem("auraway_student_profile");
+    pulseShowLogin("This account is not linked to a student record. Ask your teacher for help.");
     return;
   }
 
-  if (!data) {
-    localStorage.removeItem('auraway_student_code');
-    localStorage.removeItem('auraway_student_profile');
-    saveFamilyStudents(readFamilyStudents().filter(item => item.code !== savedCode));
-    showStudentLoginGate('This student code is no longer active. Please contact your teacher.');
-    return;
-  }
-
-  localStorage.setItem('auraway_student_profile', JSON.stringify(data));
-  const family = readFamilyStudents().filter(item => item.code !== savedCode);
-  family.unshift({ code: savedCode, profile: data });
-  saveFamilyStudents(family);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addStudentAccountControls, { once: true });
-  else addStudentAccountControls();
-})();
-
-function showStudentLoginGate(customMsg = '') {
-  const render = () => {
-    const family = readFamilyStudents();
-    document.body.innerHTML = `
-      <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-primary,#0b0f19);color:var(--text-primary,#f9fafb);padding:20px;font-family:system-ui,sans-serif;">
-        <section style="max-width:440px;width:100%;background:var(--bg-card,#1f2937);border:1px solid var(--border-color,#374151);border-radius:16px;padding:28px;">
-          <h1 style="margin-bottom:8px;text-align:center;">PULSE 🎓</h1>
-          <p style="color:var(--text-secondary,#9ca3af);text-align:center;margin-bottom:20px;">Sign in with the student code given by your teacher. Add each sibling with their own code.</p>
-          <div id="familyStudentChoices" style="display:grid;gap:8px;margin-bottom:16px;"></div>
-          <form id="studentCodeLoginForm" style="display:grid;gap:10px;">
-            <label for="globalStudentCodeInput">Student access code</label>
-            <input type="text" id="globalStudentCodeInput" autocomplete="off" placeholder="Enter student code" required style="width:100%;padding:12px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-size:1rem;text-align:center;text-transform:uppercase;">
-            <p id="globalAuthError" role="alert" style="color:#f87171;font-size:.9rem;display:${customMsg ? 'block' : 'none'};">${customMsg}</p>
-            <button id="globalUnlockBtn" type="submit" style="width:100%;padding:12px;border:0;border-radius:8px;background:#6366f1;color:white;font-weight:700;font-size:1rem;cursor:pointer;">Sign in / Add student</button>
-          </form>
-          <p style="font-size:.78rem;color:var(--text-secondary,#9ca3af);text-align:center;margin-top:14px;">Your saved sibling accounts stay on this device until you remove them.</p>
-        </section>
-      </main>`;
-
-    const choices = document.getElementById('familyStudentChoices');
-    family.forEach(student => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = 'Continue as ' + (student.profile.student_name || 'Student');
-      button.style.cssText = 'padding:10px;border:1px solid #475569;border-radius:8px;background:transparent;color:inherit;cursor:pointer;';
-      button.addEventListener('click', () => setActiveStudent(student));
-      choices.appendChild(button);
-    });
-
-    document.getElementById('studentCodeLoginForm').addEventListener('submit', verifyGlobalStudentCode);
-  };
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true });
-  else render();
+  localStorage.setItem("auraway_student_code", profile.student_code);
+  localStorage.setItem("auraway_student_profile", JSON.stringify(profile));
+  window.PULSE_CURRENT_STUDENT = profile;
+  pulseAddStudentAccountControls();
 }
 
-async function verifyGlobalStudentCode(event) {
-  if (event) event.preventDefault();
-  const input = document.getElementById('globalStudentCodeInput');
-  const errEl = document.getElementById('globalAuthError');
-  const btn = document.getElementById('globalUnlockBtn');
-  const code = input.value.trim().toUpperCase();
-
-  if (!code) {
-    errEl.textContent = 'Please enter your teacher-issued student code.';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (!supabaseClient) {
-    errEl.textContent = 'Login service is not configured. Please contact the school administrator.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Checking code…';
-  const { data, error } = await supabaseClient
-    .rpc('get_student_profile_by_code', { p_student_code: code })
-    .maybeSingle();
-
-  if (error || !data) {
-    btn.disabled = false;
-    btn.textContent = 'Sign in / Add student';
-    errEl.textContent = error ? 'Could not verify the code. Please try again.' : 'Invalid student code. Check it with your teacher.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  const family = readFamilyStudents().filter(item => item.code !== code);
-  family.unshift({ code, profile: data });
-  saveFamilyStudents(family);
-  localStorage.setItem('auraway_student_code', code);
-  localStorage.setItem('auraway_student_profile', JSON.stringify(data));
-  window.location.reload();
+function pulseAddStudentAccountControls() {
+  const header = document.querySelector(".header-bar");
+  if (!header || document.getElementById("pulseStudentAccountControls")) return;
+  const wrap = document.createElement("div");
+  wrap.id = "pulseStudentAccountControls";
+  wrap.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap;";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn";
+  button.textContent = "Sign out";
+  button.addEventListener("click", studentLogout);
+  wrap.appendChild(button);
+  header.appendChild(wrap);
 }
 
-function addStudentAccountControls() {
-  const header = document.querySelector('.header-bar');
-  if (!header || document.getElementById('studentAccountControls')) return;
-
-  const controls = document.createElement('div');
-  controls.id = 'studentAccountControls';
-  controls.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;';
-  controls.innerHTML = `
-    <button type="button" class="btn" id="switchStudentAccount">Switch / Add sibling</button>
-    <button type="button" class="btn" id="studentSignOut" style="background:#64748b;">Sign out</button>`;
-  header.appendChild(controls);
-  document.getElementById('switchStudentAccount').addEventListener('click', () => showStudentLoginGate());
-  document.getElementById('studentSignOut').addEventListener('click', studentLogout);
+async function studentLogout() {
+  if (supabaseClient) await supabaseClient.auth.signOut();
+  localStorage.removeItem("auraway_student_code");
+  localStorage.removeItem("auraway_student_profile");
+  pulseShowLogin("You have signed out.");
 }
 
-function studentLogout() {
-  localStorage.removeItem('auraway_student_code');
-  localStorage.removeItem('auraway_student_profile');
-  showStudentLoginGate('You have signed out. Choose another student or enter a code.');
-}
+document.addEventListener("DOMContentLoaded", pulseInitializeStudentAuth, { once: true });
