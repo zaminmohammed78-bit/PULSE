@@ -95,9 +95,9 @@
       const profile=JSON.parse(localStorage.getItem('auraway_student_profile')||'null');
       document.getElementById('analyticsStudentName').textContent=(profile?.student_name||'Student')+' · Your personal progress';
       const [attendanceResult,assignmentResult,updatesResult]=await Promise.all([
-        supabaseClient.from('attendance_records').select('attendance_date,status').eq('student_code',code).order('attendance_date',{ascending:false}).limit(30),
+        supabaseClient.rpc('get_student_attendance',{p_student_code:code}),
         supabaseClient.from('assignments').select('id,title,target_code,due_date').order('due_date',{ascending:true}),
-        supabaseClient.from('student_updates').select('assignment_id,status,updated_at').eq('student_code',code).in('status',['Completed','Not Completed']).order('updated_at',{ascending:false})
+        supabaseClient.rpc('get_student_updates_by_code',{p_student_code:code})
       ]);
       const errors=[attendanceResult.error,assignmentResult.error,updatesResult.error].filter(Boolean);
       if(errors.length){document.getElementById('attendanceMessage').textContent='Some analytics could not load. Please refresh or ask your teacher to check access settings.';document.getElementById('assignmentMessage').textContent='Data access needs to be checked.';return;}
@@ -110,7 +110,7 @@
       charts=[{id:'attendanceChart',labels:recent.map(r=>r.attendance_date?.slice(5)||''),values:recent.map(r=>String(r.status).toLowerCase()==='present'?1:0),colors:recent.map(r=>String(r.status).toLowerCase()==='present'?'#10b981':'#ef4444')}];
       document.getElementById('attendanceMessage').textContent=attendance.length?'Showing up to 7 latest records · Green = Present, red = other status':'Your teacher has not recorded attendance yet.';
       const assignments=(assignmentResult.data||[]).filter(a=>a.target_code==='ALL'||a.target_code===code||(profile?.class_name&&a.target_code==='CLASS:'+profile.class_name));
-      const latest=new Map();(updatesResult.data||[]).forEach(u=>{if(!latest.has(u.assignment_id))latest.set(u.assignment_id,u.status);});
+      const latest=new Map();(updatesResult.data||[]).filter(u=>['Completed','Not Completed'].includes(u.status)).forEach(u=>{if(!latest.has(u.assignment_id))latest.set(u.assignment_id,u.status);});
       const done=assignments.filter(a=>latest.get(a.id)==='Completed').length;
       const pending=Math.max(0,assignments.length-done);
       document.getElementById('completedCount').textContent=done;
