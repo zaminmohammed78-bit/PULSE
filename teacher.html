@@ -180,6 +180,21 @@
     </section>
   </div>
 
+  <div id="studentPasswordModal" role="dialog" aria-modal="true" aria-labelledby="studentPasswordTitle" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:18px;">
+    <form id="studentPasswordForm" class="card" style="width:min(100%,420px);display:grid;gap:12px;">
+      <h2 id="studentPasswordTitle">Set permanent student password</h2>
+      <p style="color:var(--text-secondary);font-size:.9rem;">Create a password the student can keep using. You can change it later.</p>
+      <label for="studentPasswordInput">New password</label>
+      <input id="studentPasswordInput" class="input-field" type="password" autocomplete="new-password" minlength="10" maxlength="72" required placeholder="At least 10 characters">
+      <label for="studentPasswordConfirm">Confirm password</label>
+      <input id="studentPasswordConfirm" class="input-field" type="password" autocomplete="new-password" minlength="10" maxlength="72" required placeholder="Enter it again">
+      <p id="studentPasswordError" role="alert" style="color:#ef4444;margin:0;"></p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button type="button" class="btn" id="cancelStudentPassword" style="background:#64748b;">Cancel</button>
+        <button type="submit" class="btn" id="saveStudentPassword">Save password</button>
+      </div>
+    </form>
+  </div>
   <script>
     const TEACHER_AUTH_FUNCTION_URL = 'https://iazlemocpuhzwtrkyfgw.supabase.co/functions/v1/bright-handler';
 
@@ -640,24 +655,55 @@
       await loadStudentsRoster();
     });
 
+    function requestPermanentStudentPassword() {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('studentPasswordModal');
+        const form = document.getElementById('studentPasswordForm');
+        const first = document.getElementById('studentPasswordInput');
+        const second = document.getElementById('studentPasswordConfirm');
+        const error = document.getElementById('studentPasswordError');
+        const cancel = document.getElementById('cancelStudentPassword');
+        const submit = document.getElementById('saveStudentPassword');
+        modal.style.display = 'flex';
+        first.value = '';
+        second.value = '';
+        error.textContent = '';
+        first.focus();
+        const finish = (value) => {
+          modal.style.display = 'none';
+          form.removeEventListener('submit', onSubmit);
+          cancel.removeEventListener('click', onCancel);
+          resolve(value);
+        };
+        const onCancel = () => finish(null);
+        const onSubmit = (event) => {
+          event.preventDefault();
+          if (first.value.length < 10 || first.value.length > 72) {
+            error.textContent = 'Use 10 to 72 characters.';
+            return;
+          }
+          if (first.value !== second.value) {
+            error.textContent = 'The passwords do not match.';
+            second.focus();
+            return;
+          }
+          submit.disabled = true;
+          finish(first.value);
+          submit.disabled = false;
+        };
+        form.addEventListener('submit', onSubmit);
+        cancel.addEventListener('click', onCancel);
+      });
+    }
+
     async function createStudentLogin(studentId) {
       const banner = document.getElementById('newCodeBanner');
       const codeDisplay = document.getElementById('generatedCodeDisplay');
       const passwordDisplay = document.getElementById('generatedLoginPassword');
       const info = document.getElementById('generatedLoginInfo');
 
-      const password = window.prompt('Create a permanent password for this student (at least 10 characters). To change it later, use Reset / Change Password again:');
+      const password = await requestPermanentStudentPassword();
       if (password === null) return;
-      if (password.length < 10 || password.length > 72) {
-        alert('Please use a password between 10 and 72 characters.');
-        return;
-      }
-      const confirmation = window.prompt('Re-enter the password to confirm:');
-      if (confirmation === null) return;
-      if (password !== confirmation) {
-        alert('The passwords do not match. Please try again.');
-        return;
-      }
 
       banner.style.display = 'block';
       passwordDisplay.textContent = 'Saving permanent password…';
