@@ -94,7 +94,7 @@
 
       document.getElementById('activeCodeDisplay').textContent = code;
 
-      const { data: profile } = await supabaseClient.from('students').select('*').eq('student_code', code).maybeSingle();
+      const { data: profile } = await supabaseClient.rpc('get_student_profile_by_code', { p_student_code: code }).maybeSingle();
       currentStudent = profile || JSON.parse(localStorage.getItem('auraway_student_profile') || 'null');
 
       if (currentStudent) {
@@ -106,11 +106,7 @@
 
       const [{ data: hwData, error: homeworkError }, { data: doneData, error: statusError }] = await Promise.all([
         supabaseClient.from('assignments').select('*').order('due_date', { ascending: true }),
-        supabaseClient.from('student_updates')
-          .select('assignment_id,status,updated_at')
-          .eq('student_code', code)
-          .in('status', ['Completed', 'Not Completed'])
-          .order('updated_at', { ascending: false })
+        supabaseClient.rpc('get_student_updates_by_code', { p_student_code: code })
       ]);
 
       const container = document.getElementById('assignmentsList');
