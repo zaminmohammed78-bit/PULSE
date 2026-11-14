@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pulse-pwa-v2';
+const CACHE_NAME = 'pulse-pwa-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -24,6 +24,7 @@ const ASSETS_TO_CACHE = [
   './student-auth.js',
   './supabase.js',
   './pwa-installer.js',
+  './portal-switcher.js',
   './manifest.json',
   './pwa-icon.svg'
 ];
