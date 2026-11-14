@@ -111,6 +111,7 @@ async function pulseInitializeStudentAuth() {
   localStorage.setItem("auraway_student_profile", JSON.stringify(profile));
   window.PULSE_CURRENT_STUDENT = profile;
   pulseAddStudentAccountControls();
+  window.dispatchEvent(new CustomEvent("pulseStudentReady", { detail: { profile } }));
 }
 
 function pulseAddStudentAccountControls() {
