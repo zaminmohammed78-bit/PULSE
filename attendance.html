@@ -163,14 +163,14 @@
     }
 
     async function loadTeacherAttendance() {
-      const code = (localStorage.getItem('auraway_student_code') || '').trim().toUpperCase();
+      const code = window.PULSE_CURRENT_STUDENT?.student_code;
       if (!code || !supabaseClient) {
         attHistoryList.textContent = 'Please sign in with your student code to view attendance.';
         renderAttendance([]);
         return;
       }
       attHistoryList.textContent = 'Loading teacher attendance…';
-      const { data, error } = await supabaseClient.rpc('get_student_attendance', { p_student_code: code });
+      const { data, error } = await supabaseClient.from('attendance_records').select('attendance_date,status').eq('student_code', code).order('attendance_date', { ascending: false }).limit(365);
       if (error) {
         attHistoryList.textContent = 'Could not load attendance. Your school administrator may need to run the attendance SQL setup.';
         console.error('Attendance lookup failed:', error);
@@ -180,7 +180,8 @@
       renderAttendance(data || []);
     }
 
-    loadTeacherAttendance();
+    if (window.PULSE_CURRENT_STUDENT) loadTeacherAttendance();
+    else window.addEventListener('pulseStudentReady', loadTeacherAttendance, { once: true });
   </script>
   <script src="navigation.js" defer></script>
 </body>
