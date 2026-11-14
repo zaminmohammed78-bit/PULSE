@@ -9,8 +9,11 @@
   <link rel="stylesheet" href="style.css?v=20261114-timetable1">
   <script src="pwa-installer.js" defer></script>
   <script src="portal-switcher.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="student-auth.js" defer></script>
   <style>
-    .tt-page{max-width:1180px;margin:0 auto}
+    .tt-page{max-width:1180px;margin:0 auto} #addTopButton{display:none!important} .tt-page>section[aria-labelledby="ttFormHeading"],#editOverlay{display:none!important}
     .tt-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
     .tt-header h1{margin:0;font-size:clamp(1.45rem,3vw,2rem);letter-spacing:-.035em}
     .tt-muted{color:var(--text-secondary);font-size:.9rem;margin:5px 0 0}
@@ -53,7 +56,7 @@
     @media(prefers-reduced-motion:reduce){.tt-slot,.tt-day{transition:none!important}}
   </style>
 </head>
-<body>
+<body class="pulse-student-portal">
   <div class="app-container">
     <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
     <div class="menu-backdrop" id="menuBackdrop" hidden></div>
@@ -67,8 +70,8 @@
     <main>
       <div class="tt-page">
         <header class="tt-header">
-          <div><h1>My Timetable</h1><p class="tt-muted">Your week, organised in one simple view.</p></div>
-          <div class="tt-actions"><button class="btn tt-secondary" id="todayButton" type="button">Go to today</button><button class="btn tt-primary" id="addTopButton" type="button">＋ Add period</button></div>
+          <div><h1>School Timetable</h1><p class="tt-muted">The latest timetable published by your teacher.</p></div>
+          <div class="tt-actions"><button class="btn tt-secondary" id="todayButton" type="button">Go to today</button></div>
         </header>
         <section class="card tt-panel" aria-labelledby="ttFormHeading">
           <h2 id="ttFormHeading" style="font-size:1rem;margin:0 0 12px">Add a period</h2>
@@ -89,7 +92,7 @@
             <div class="tt-filter" role="group" aria-label="Filter timetable"><button type="button" data-filter="all" aria-pressed="true">All days</button><button type="button" data-filter="today" aria-pressed="false">Today</button><button type="button" data-filter="weekdays" aria-pressed="false">Weekdays</button></div>
           </div>
           <div id="weekGrid" class="tt-week"></div>
-          <p class="tt-status">Saved on this device and available offline. This timetable is personal to this browser.</p>
+          <p class="tt-status">Read-only view · Your teacher manages the shared school timetable.</p>
         </section>
       </div>
     </main>
@@ -116,33 +119,42 @@
     html.setAttribute('data-theme',localStorage.getItem('auraway_theme')||'dark');
     document.getElementById('themeToggle').addEventListener('click',()=>{const next=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',next);localStorage.setItem('auraway_theme',next)});
     const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    const dayIndex=(new Date().getDay()+6)%7;
-    const today=days[dayIndex];
-    let schedule={};
-    try{schedule=JSON.parse(localStorage.getItem('auraway_tt_schedule')||'{}')||{}}catch(e){schedule={}}
-    function timeToMinutes(value){const m=/^(\d{1,2}):(\d{2})$/.exec(value||'');return m?Number(m[1])*60+Number(m[2]):null}
-    function escapeText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-    function normalise(){days.forEach(day=>{if(!Array.isArray(schedule[day]))schedule[day]=[];schedule[day].forEach((slot,i)=>{if(!slot.id)slot.id='legacy-'+day+'-'+i+'-'+Math.random().toString(36).slice(2,7);if(!slot.type)slot.type='study';if(!slot.title)slot.title='Untitled period';if(!slot.start||!slot.end){const parts=String(slot.time||'').match(/(\d{1,2}:\d{2})\s*(AM|PM)?\s*[-–]\s*(\d{1,2}:\d{2})\s*(AM|PM)?/i);if(parts){const to24=(clock,meridiem)=>{let [hh,mm]=clock.split(':').map(Number);if(meridiem){hh=hh%12+(meridiem.toUpperCase()==='PM'?12:0)}return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')};slot.start=to24(parts[1],parts[2]);slot.end=to24(parts[3],parts[4])}}});schedule[day].sort((a,b)=>(timeToMinutes(a.start??'')??9999)-(timeToMinutes(b.start??'')??9999))})}
-    function persist(){localStorage.setItem('auraway_tt_schedule',JSON.stringify(schedule))}
-    function displayTime(value){if(!value)return '';const [h,m]=value.split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM')}
-    function render(){const root=document.getElementById('weekGrid');root.replaceChildren();let total=0;days.forEach(day=>total+=(schedule[day]||[]).length);document.getElementById('weekSummary').textContent=total+' '+(total===1?'period':'periods')+' scheduled · '+today+' is highlighted';
-      days.forEach(day=>{const card=document.createElement('article');card.className='tt-day'+(day===today?' is-today':'');card.dataset.day=day;const head=document.createElement('div');head.className='tt-day-head';const h=document.createElement('h3');h.textContent=day;head.append(h);if(day===today){const tag=document.createElement('span');tag.className='tt-today-tag';tag.textContent='TODAY';head.append(tag)}card.append(head);
-        const slots=schedule[day]||[];if(!slots.length){const empty=document.createElement('p');empty.className='tt-empty';empty.textContent='No periods added yet.';card.append(empty)}
-        slots.forEach(slot=>{const item=document.createElement('div');item.className='tt-slot';const time=document.createElement('div');time.className='tt-slot-time';time.textContent=slot.start&&slot.end?displayTime(slot.start)+' – '+displayTime(slot.end):slot.time||'Time not set';const main=document.createElement('div');main.className='tt-slot-main';const title=document.createElement('div');title.className='tt-slot-title';title.textContent=slot.title||'Untitled period';const meta=document.createElement('div');meta.className='tt-slot-meta';meta.textContent=[({class:'Class',study:'Study',break:'Break',other:'Other'}[slot.type]||'Period'),slot.room,slot.note].filter(Boolean).join(' · ');main.append(title,meta);if(slot.id){const actions=document.createElement('div');actions.className='tt-slot-actions';const edit=document.createElement('button');edit.type='button';edit.className='btn tt-secondary tt-mini';edit.textContent='Edit';edit.addEventListener('click',()=>openEdit(day,slot));const del=document.createElement('button');del.type='button';del.className='btn tt-secondary tt-mini';del.textContent='Remove';del.addEventListener('click',()=>removeSlot(day,slot.id));actions.append(edit,del);main.append(actions)}item.append(time,main);card.append(item)});root.append(card)});
-      applyFilter(document.querySelector('.tt-filter button[aria-pressed="true"]')?.dataset.filter||'all')}
+    const today=days[(new Date().getDay()+6)%7];
+    const root=document.getElementById('weekGrid');
+    function displayTime(value){if(!value)return '';const [h,m]=String(value).slice(0,5).split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM')}
+    function render(rows){
+      root.replaceChildren();
+      const list=Array.isArray(rows)?rows:[];
+      document.getElementById('weekSummary').textContent=list.length+' '+(list.length===1?'period':'periods')+' published · '+today+' is highlighted';
+      days.forEach(day=>{
+        const card=document.createElement('article');card.className='tt-day'+(day===today?' is-today':'');
+        const head=document.createElement('div');head.className='tt-day-head';
+        const h=document.createElement('h3');h.textContent=day;head.append(h);
+        if(day===today){const tag=document.createElement('span');tag.className='tt-today-tag';tag.textContent='TODAY';head.append(tag)}
+        card.append(head);
+        const slots=list.filter(s=>s.day_of_week===day).sort((a,b)=>String(a.start_time).localeCompare(String(b.start_time)));
+        if(!slots.length){const empty=document.createElement('p');empty.className='tt-empty';empty.textContent='No periods published.';card.append(empty)}
+        slots.forEach(slot=>{
+          const item=document.createElement('div');item.className='tt-slot';
+          const time=document.createElement('div');time.className='tt-slot-time';time.textContent=displayTime(slot.start_time)+' – '+displayTime(slot.end_time);
+          const main=document.createElement('div');main.className='tt-slot-main';
+          const title=document.createElement('div');title.className='tt-slot-title';title.textContent=slot.title;
+          const meta=document.createElement('div');meta.className='tt-slot-meta';meta.textContent=[({class:'Class',study:'Study',break:'Break',other:'Other'}[slot.period_type]||'Period'),slot.room,slot.note].filter(Boolean).join(' · ');
+          main.append(title,meta);item.append(time,main);card.append(item);
+        });
+        root.append(card);
+      });
+      applyFilter(document.querySelector('.tt-filter button[aria-pressed="true"]')?.dataset.filter||'all');
+    }
     function applyFilter(filter){document.querySelectorAll('.tt-day').forEach(card=>{const d=card.dataset.day;card.hidden=filter==='today'?d!==today:filter==='weekdays'?['Saturday','Sunday'].includes(d):false});document.querySelectorAll('.tt-filter button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.filter===filter)))}
     document.querySelectorAll('.tt-filter button').forEach(b=>b.addEventListener('click',()=>applyFilter(b.dataset.filter)));
-    function validate(day,start,end,ignoreId){const a=timeToMinutes(start),b=timeToMinutes(end);if(a===null||b===null||b<=a)return 'End time must be later than start time.';const clash=(schedule[day]||[]).some(s=>s.id!==ignoreId&&s.start&&s.end&&a<timeToMinutes(s.end)&&b>timeToMinutes(s.start));return clash?'This period overlaps another period on that day.':''}
-    function addSlot(data){const error=validate(data.day,data.start,data.end);if(error){document.getElementById('ttFormStatus').textContent=error;return}const slot={id:'tt-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),type:data.type,title:data.title.trim(),start:data.start,end:data.end,room:data.room.trim(),note:data.note.trim()};schedule[data.day].push(slot);schedule[data.day].sort((a,b)=>timeToMinutes(a.start)-timeToMinutes(b.start));persist();render();document.getElementById('ttFormStatus').textContent='Period added to your timetable.';document.getElementById('periodTitle').value='';document.getElementById('periodRoom').value='';document.getElementById('periodNote').value=''}
-    document.getElementById('periodForm').addEventListener('submit',e=>{e.preventDefault();addSlot({day:document.getElementById('periodDay').value,type:document.getElementById('periodType').value,title:document.getElementById('periodTitle').value,start:document.getElementById('periodStart').value,end:document.getElementById('periodEnd').value,room:document.getElementById('periodRoom').value,note:document.getElementById('periodNote').value})});
-    function openEdit(day,slot){document.getElementById('editId').value=slot.id;document.getElementById('editDay').value=day;document.getElementById('editType').value=slot.type||'study';document.getElementById('editTitle').value=slot.title||'';document.getElementById('editRoom').value=slot.room||'';document.getElementById('editStart').value=slot.start||'';document.getElementById('editEnd').value=slot.end||'';document.getElementById('editNote').value=slot.note||'';document.getElementById('editStatus').textContent='';document.getElementById('editOverlay').hidden=false;document.getElementById('editTitle').focus()}
-    function closeEdit(){document.getElementById('editOverlay').hidden=true}
-    document.getElementById('closeEdit').addEventListener('click',closeEdit);document.getElementById('editOverlay').addEventListener('click',e=>{if(e.target.id==='editOverlay')closeEdit()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeEdit()});
-    document.getElementById('editForm').addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('editId').value,day=document.getElementById('editDay').value,data={day,type:document.getElementById('editType').value,title:document.getElementById('editTitle').value,start:document.getElementById('editStart').value,end:document.getElementById('editEnd').value,room:document.getElementById('editRoom').value,note:document.getElementById('editNote').value};const oldDay=days.find(d=>(schedule[d]||[]).some(s=>s.id===id));const error=validate(day,data.start,data.end,id);if(error){document.getElementById('editStatus').textContent=error;return}if(oldDay)schedule[oldDay]=schedule[oldDay].filter(s=>s.id!==id);schedule[day].push({...data,id});schedule[day].sort((a,b)=>timeToMinutes(a.start)-timeToMinutes(b.start));persist();render();closeEdit();document.getElementById('ttFormStatus').textContent='Changes saved.'});
-    function removeSlot(day,id){if(!confirm('Remove this period from your timetable?'))return;schedule[day]=schedule[day].filter(s=>s.id!==id);persist();render()}
     document.getElementById('todayButton').addEventListener('click',()=>{applyFilter('today');document.querySelector('.tt-day.is-today')?.scrollIntoView({behavior:'smooth',block:'start'})});
-    document.getElementById('addTopButton').addEventListener('click',()=>{document.getElementById('periodForm').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('periodTitle').focus()});
-    normalise();persist();render();
+    async function loadSharedTimetable(){
+      const {data,error}=await supabaseClient.from('pulse_timetable').select('id,day_of_week,period_type,title,start_time,end_time,room,note').order('start_time');
+      if(error){document.getElementById('weekSummary').textContent='Could not load the shared timetable. Please refresh.';console.error('Timetable load failed',error);return}
+      render(data||[]);
+    }
+    window.addEventListener('pulseStudentReady',loadSharedTimetable,{once:true});
   </script>
   <script src="navigation.js" defer></script>
 </body>
