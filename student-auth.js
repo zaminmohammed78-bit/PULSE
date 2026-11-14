@@ -67,7 +67,7 @@ function showStudentLoginGate(customMsg = '') {
     document.body.innerHTML = `
       <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-primary,#0b0f19);color:var(--text-primary,#f9fafb);padding:20px;font-family:system-ui,sans-serif;">
         <section style="max-width:440px;width:100%;background:var(--bg-card,#1f2937);border:1px solid var(--border-color,#374151);border-radius:16px;padding:28px;">
-          <h1 style="margin-bottom:8px;text-align:center;">AURAWAY 🎓</h1>
+          <h1 style="margin-bottom:8px;text-align:center;">PULSE 🎓</h1>
           <p style="color:var(--text-secondary,#9ca3af);text-align:center;margin-bottom:20px;">Sign in with the student code given by your teacher. Add each sibling with their own code.</p>
           <div id="familyStudentChoices" style="display:grid;gap:8px;margin-bottom:16px;"></div>
           <form id="studentCodeLoginForm" style="display:grid;gap:10px;">
