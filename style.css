@@ -422,3 +422,31 @@ html[data-theme="dark"] .pulse-student-portal .nav-group-label{color:#827c96}htm
 .pulse-student-portal .student-nav-group a{min-height:40px;padding:9px 10px;font-size:.84rem}
 .pulse-student-portal .student-nav-group a.active{color:var(--text-primary);background:linear-gradient(100deg,rgba(174,126,255,.2),rgba(174,126,255,.075));border-color:rgba(190,155,255,.2)}
 @media(max-width:767px){.pulse-student-portal .student-nav-tools{margin-bottom:12px}.pulse-student-portal .student-nav-group summary{padding:13px 12px}.pulse-student-portal .student-nav-group a{min-height:44px}}
+
+
+/* PULSE typography comfort — soften overly bright white text in glossy dark mode */
+html[data-theme="dark"]{
+  --text-primary:#e2deeb;
+  --text-secondary:#b8b2c8;
+}
+html[data-theme="dark"] body.pulse-student-portal,
+html[data-theme="dark"] body.pulse-teacher-portal,
+html[data-theme="dark"] body.pulse-parent-portal{color:#e2deeb}
+html[data-theme="dark"] .pulse-student-portal h1,
+html[data-theme="dark"] .pulse-student-portal h2,
+html[data-theme="dark"] .pulse-student-portal h3,
+html[data-theme="dark"] .pulse-teacher-portal h1,
+html[data-theme="dark"] .pulse-teacher-portal h2,
+html[data-theme="dark"] .pulse-teacher-portal h3,
+html[data-theme="dark"] .pulse-parent-portal h1,
+html[data-theme="dark"] .pulse-parent-portal h2,
+html[data-theme="dark"] .pulse-parent-portal h3{color:#e7e2f0}
+html[data-theme="dark"] .pulse-student-portal input,
+html[data-theme="dark"] .pulse-student-portal select,
+html[data-theme="dark"] .pulse-student-portal textarea,
+html[data-theme="dark"] .pulse-teacher-portal input,
+html[data-theme="dark"] .pulse-teacher-portal select,
+html[data-theme="dark"] .pulse-teacher-portal textarea,
+html[data-theme="dark"] .pulse-parent-portal input,
+html[data-theme="dark"] .pulse-parent-portal select,
+html[data-theme="dark"] .pulse-parent-portal textarea{color:#e2deeb}
