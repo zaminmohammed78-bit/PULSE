@@ -68,7 +68,7 @@
       <div class="header-bar">
         <div class="welcome-title">
           <h1>Academic Marks Manager 📈</h1>
-          <p>Record your examination results, calculate percentages, and track academic performance.</p>
+          <p>View teacher-published school results and keep a separate personal practice record.</p>
         </div>
       </div>
 
@@ -103,7 +103,8 @@
 
       <!-- Add Mark Form -->
       <div class="card" style="margin-bottom: 24px;">
-        <h3>Record New Examination Mark</h3>
+        <h3>Personal Practice Score</h3>
+        <p style="color:var(--text-secondary);font-size:.82rem;margin-top:5px;">Optional personal tracker. These scores stay on this device and are not official school results.</p>
         <form id="markForm" class="marks-form">
           <input type="text" id="markExamName" class="input-field" placeholder="Exam Title (e.g. Mid-Term Exam)" required>
           <select id="markSubject" class="input-field">
@@ -122,7 +123,7 @@
 
       <!-- Marks History List -->
       <div class="card">
-        <h3>Examination Results History</h3>
+        <h3>Personal Practice History</h3>
         <div id="marksList" style="margin-top: 14px;">
           <!-- Injected via JS -->
         </div>
@@ -198,11 +199,7 @@
     if (window.PULSE_CURRENT_STUDENT) loadOfficialSchoolMarks(window.PULSE_CURRENT_STUDENT);
 
     // Marks State
-    let marks = JSON.parse(localStorage.getItem('auraway_marks')) || [
-      { id: 1, examName: 'Mid-Term Assessment', subject: 'Mathematics', obtained: 45, total: 50 },
-      { id: 2, examName: 'Mid-Term Assessment', subject: 'Physics', obtained: 38, total: 50 },
-      { id: 3, examName: 'Quarterly Examination', subject: 'Social Science', obtained: 82, total: 100 }
-    ];
+    let marks = JSON.parse(localStorage.getItem('auraway_marks')) || [];
 
     const markForm = document.getElementById('markForm');
     const marksList = document.getElementById('marksList');
