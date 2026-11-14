@@ -1,0 +1,38 @@
+{
+  "name": "PULSE — Student Management for Schools",
+  "short_name": "PULSE",
+  "description": "Student Productivity, Parent Insights, and Teacher Management Portal System",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#101426",
+  "theme_color": "#101426",
+  "icons": [
+    {
+      "src": "pwa-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Student Portal (PULSE)",
+      "short_name": "PULSE",
+      "url": "./index.html",
+      "description": "Student Productivity Dashboard"
+    },
+    {
+      "name": "Parent Portal (PULSE-P)",
+      "short_name": "PULSE-P",
+      "url": "./parent.html",
+      "description": "Child Study Progress & Attendance"
+    },
+    {
+      "name": "Teacher Portal (PULSE-T)",
+      "short_name": "PULSE-T",
+      "url": "./teacher.html",
+      "description": "Roster & Attendance Management"
+    }
+  ]
+}
