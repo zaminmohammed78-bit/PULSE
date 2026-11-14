@@ -80,6 +80,7 @@
         <ul class="nav-links">
           <li><a href="#teacherCommandCenter">🏠 <span>Overview</span></a></li>
           <li><a href="#teacherStudentsSection">👥 <span>Students</span></a></li>
+          <li><a href="#teacherTimetableManager">🗓️ <span>Timetable</span></a></li>
           <li><a href="#teacherAttendanceManager">📋 <span>Attendance</span></a></li>
           <li><a href="#teacherMarksSection">📝 <span>Marks</span></a></li>
           <li><a href="#teacherAssignmentsSection">📚 <span>Assignments</span></a></li>
@@ -167,6 +168,26 @@
     </div>
 
     </div>
+
+    <section id="teacherTimetableManager" class="card" style="margin:0 0 20px;" aria-labelledby="teacherTimetableHeading">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div><h3 id="teacherTimetableHeading">🗓️ Shared School Timetable</h3><p style="color:var(--text-secondary);font-size:.85rem;margin:4px 0 12px;">Only the teacher account can publish or change periods. Students and parents get read-only access.</p></div>
+        <button type="button" class="btn teacher-secondary-action" id="refreshTeacherTimetable">Refresh</button>
+      </div>
+      <form id="teacherTimetableForm" class="portal-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;">
+        <select id="ttTeacherDay" class="input-field" required><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select>
+        <select id="ttTeacherType" class="input-field"><option value="class">Class</option><option value="study">Study</option><option value="break">Break</option><option value="other">Other</option></select>
+        <input id="ttTeacherTitle" class="input-field" maxlength="80" placeholder="Subject / activity" required>
+        <input id="ttTeacherRoom" class="input-field" maxlength="50" placeholder="Room (optional)">
+        <input id="ttTeacherStart" class="input-field" type="time" value="09:00" required>
+        <input id="ttTeacherEnd" class="input-field" type="time" value="09:45" required>
+        <input id="ttTeacherNote" class="input-field" maxlength="140" placeholder="Note (optional)">
+        <button class="btn" type="submit" id="ttTeacherSave">＋ Add period</button>
+        <button class="btn teacher-secondary-action" type="button" id="ttTeacherCancel" hidden>Cancel edit</button>
+      </form>
+      <p id="ttTeacherMessage" role="status" style="font-size:.82rem;color:var(--text-secondary);margin:8px 0;"></p>
+      <div id="teacherTimetableList" style="display:grid;gap:8px;"><p style="color:var(--text-secondary);">Loading timetable…</p></div>
+    </section>
 
     <!-- Teacher Attendance Manager -->
     <div class="card" style="margin-bottom:20px;" id="teacherAttendanceManager">
@@ -1015,5 +1036,56 @@
     });
   </script>
   <script src="navigation.js" defer></script>
+<script>
+(function(){
+  const form=document.getElementById('teacherTimetableForm');
+  if(!form)return;
+  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  let editingId=null,teacherUserId=null,rows=[];
+  const el=id=>document.getElementById(id);
+  function message(text,isError=false){el('ttTeacherMessage').textContent=text;el('ttTeacherMessage').style.color=isError?'#ef4444':'var(--text-secondary)'}
+  function resetForm(){editingId=null;form.reset();el('ttTeacherStart').value='09:00';el('ttTeacherEnd').value='09:45';el('ttTeacherSave').textContent='＋ Add period';el('ttTeacherCancel').hidden=true}
+  function render(){
+    const box=el('teacherTimetableList');box.replaceChildren();
+    if(!rows.length){const p=document.createElement('p');p.style.color='var(--text-secondary)';p.textContent='No periods published yet. Add the first period above.';box.append(p);return}
+    days.forEach(day=>{
+      const dayRows=rows.filter(r=>r.day_of_week===day);if(!dayRows.length)return;
+      const wrap=document.createElement('section');wrap.style.cssText='border:1px solid var(--border-color);border-radius:12px;padding:12px;';
+      const h=document.createElement('h4');h.textContent=day;h.style.margin='0 0 8px';wrap.append(h);
+      dayRows.forEach(row=>{
+        const line=document.createElement('div');line.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 0;border-top:1px solid var(--border-color);';
+        const info=document.createElement('div');info.style.minWidth='0';
+        const title=document.createElement('strong');title.textContent=row.title;
+        const meta=document.createElement('small');meta.style.cssText='display:block;color:var(--text-secondary);margin-top:3px';meta.textContent=[String(row.start_time).slice(0,5)+'–'+String(row.end_time).slice(0,5),row.period_type,row.room,row.note].filter(Boolean).join(' · ');
+        info.append(title,meta);
+        const actions=document.createElement('div');actions.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
+        const edit=document.createElement('button');edit.type='button';edit.className='btn teacher-secondary-action';edit.textContent='Edit';edit.addEventListener('click',()=>{editingId=row.id;el('ttTeacherDay').value=row.day_of_week;el('ttTeacherType').value=row.period_type;el('ttTeacherTitle').value=row.title;el('ttTeacherRoom').value=row.room||'';el('ttTeacherStart').value=String(row.start_time).slice(0,5);el('ttTeacherEnd').value=String(row.end_time).slice(0,5);el('ttTeacherNote').value=row.note||'';el('ttTeacherSave').textContent='Save changes';el('ttTeacherCancel').hidden=false;form.scrollIntoView({behavior:'smooth',block:'center'});el('ttTeacherTitle').focus()});
+        const del=document.createElement('button');del.type='button';del.className='btn teacher-secondary-action';del.textContent='Remove';del.addEventListener('click',async()=>{if(!confirm('Remove this timetable period?'))return;const {error}=await supabaseClient.from('pulse_timetable').delete().eq('id',row.id);if(error){message('Could not remove this period. Check teacher access.',true);return}message('Period removed.');await load()});
+        actions.append(edit,del);line.append(info,actions);wrap.append(line);
+      });box.append(wrap);
+    });
+  }
+  async function load(){const {data,error}=await supabaseClient.from('pulse_timetable').select('*').order('day_of_week').order('start_time');if(error){message('Could not load timetable: '+error.message,true);return}rows=data||[];render()}
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const {data:sessionData}=await supabaseClient.auth.getSession();const session=sessionData?.session;
+    if(!session||session.user.email?.toLowerCase()!=='teacher@auraway.app'){message('Teacher sign-in required. Students and parents cannot edit.',true);return}
+    const day=el('ttTeacherDay').value,start=el('ttTeacherStart').value,end=el('ttTeacherEnd').value;
+    if(end<=start){message('End time must be later than start time.',true);return}
+    const startMin=Number(start.slice(0,2))*60+Number(start.slice(3)),endMin=Number(end.slice(0,2))*60+Number(end.slice(3));
+    const clash=rows.some(r=>r.day_of_week===day&&r.id!==editingId&&startMin<Number(String(r.end_time).slice(0,2))*60+Number(String(r.end_time).slice(3))&&endMin>Number(String(r.start_time).slice(0,2))*60+Number(String(r.start_time).slice(3)));
+    if(clash){message('This period overlaps another period on that day.',true);return}
+    const payload={day_of_week:day,period_type:el('ttTeacherType').value,title:el('ttTeacherTitle').value.trim(),room:el('ttTeacherRoom').value.trim(),start_time:start,end_time:end,note:el('ttTeacherNote').value.trim(),updated_by:session.user.id};
+    const result=editingId?await supabaseClient.from('pulse_timetable').update(payload).eq('id',editingId):await supabaseClient.from('pulse_timetable').insert(payload);
+    if(result.error){message('Save failed: '+result.error.message,true);return}
+    message(editingId?'Timetable period updated.':'Timetable period published.');resetForm();await load();
+  });
+  el('ttTeacherCancel').addEventListener('click',resetForm);
+  el('refreshTeacherTimetable').addEventListener('click',load);
+  async function init(){const {data,error}=await supabaseClient.auth.getSession();const s=data?.session;if(error||s?.user?.email?.toLowerCase()!=='teacher@auraway.app'){message('Sign in with the authorised teacher account to manage the timetable.',true);form.querySelectorAll('input,select,button').forEach(x=>x.disabled=true);return}teacherUserId=s.user.id;await load()}
+  document.addEventListener('DOMContentLoaded',init,{once:true});
+  if(document.readyState!=='loading')init();
+})();
+</script>
 </body>
 </html>
