@@ -25,7 +25,7 @@ drop policy if exists "Students and teachers can view timetable" on public.pulse
 create policy "Students and teachers can view timetable"
   on public.pulse_timetable for select to authenticated
   using (
-    public.is_auraway_teacher()
+    (select public.is_auraway_teacher())
     or (select auth.jwt() -> 'app_metadata' ->> 'role') = 'student'
   );
 
