@@ -359,12 +359,12 @@
       populateAttendanceClasses();
       populateAssignmentTargets();
       populateTeacherMarkStudents();
+      updateTeacherOverview();
+      populateTeacherRosterFilter();
       if (allStudents.length === 0) {
         container.innerHTML = '<p style="color:var(--text-secondary);">No students added yet.</p>';
         return;
       }
-      updateTeacherOverview();
-      populateTeacherRosterFilter();
       container.innerHTML = '';
       allStudents.forEach(st => {
         const div = document.createElement('div');
@@ -391,6 +391,7 @@
         `;
         container.appendChild(div);
       });
+      filterTeacherRoster();
     }
 
     function updateTeacherOverview() {
