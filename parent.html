@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#101426">
   <title>PULSE — Parent Portal</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=20261114-parent2">
+  <link rel="stylesheet" href="style.css?v=20261114-parent3">
   <script src="pwa-installer.js" defer></script>
   <script src="portal-switcher.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -106,6 +106,11 @@
         </div>
       </div>
 
+      <div class="card" style="margin-bottom:16px;">
+        <div class="parent-section-heading"><div><h3>🗓️ School timetable</h3><p>Published by the teacher · View only</p></div></div>
+        <div id="pTimetableList" style="margin-top:10px;">Load your child's report to view the timetable.</div>
+      </div>
+
       <div class="card">
         <div class="parent-section-heading"><div><h3>📚 Homework tracker</h3><p>Assigned work and latest completion status</p></div><span class="parent-status-pill" id="pHomeworkProgressLabel">Not loaded</span></div>
         <div class="parent-progress-track" aria-hidden="true"><div class="parent-progress-fill" id="pHomeworkProgressBar"></div></div>
@@ -171,6 +176,34 @@
             status.style.color = String(row.status).toLowerCase() === 'present' ? '#10b981' : String(row.status).toLowerCase() === 'absent' ? '#ef4444' : '#f59e0b';
             line.append(date, status);
             attendanceBox.appendChild(line);
+          });
+        }
+
+        const timetable = Array.isArray(report.timetable) ? report.timetable : [];
+        const timetableBox = document.getElementById('pTimetableList');
+        timetableBox.replaceChildren();
+        const timetableDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+        if (!timetable.length) {
+          timetableBox.textContent = 'The teacher has not published a timetable yet.';
+        } else {
+          timetableDays.forEach(day => {
+            const dayRows = timetable.filter(item => item.day_of_week === day);
+            if (!dayRows.length) return;
+            const heading = document.createElement('strong');
+            heading.textContent = day;
+            heading.style.cssText = 'display:block;margin:12px 0 6px;';
+            timetableBox.appendChild(heading);
+            dayRows.forEach(item => {
+              const line = document.createElement('div');
+              line.className = 'hw-row';
+              const detail = document.createElement('div');
+              const title = document.createElement('strong');
+              title.textContent = item.title;
+              const meta = document.createElement('small');
+              meta.style.cssText = 'display:block;color:var(--text-secondary);margin-top:3px;';
+              meta.textContent = [String(item.start_time).slice(0,5)+'–'+String(item.end_time).slice(0,5),item.period_type,item.room,item.note].filter(Boolean).join(' · ');
+              detail.append(title,meta);line.appendChild(detail);timetableBox.appendChild(line);
+            });
           });
         }
 
