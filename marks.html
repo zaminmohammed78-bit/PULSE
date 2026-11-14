@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="student-auth.js"></script>
   <title>PULSE — Academic Marks Manager</title>
   <link rel="stylesheet" href="style.css">
   <style>
@@ -69,6 +72,21 @@
         </div>
       </div>
 
+      <div class="card" style="margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h3>🏫 Official School Results</h3>
+            <p style="color:var(--text-secondary);font-size:.85rem;margin-top:4px;">Examination marks entered by your teacher and securely linked to your student account.</p>
+          </div>
+          <span class="grade-badge grade-b">Teacher verified</span>
+        </div>
+        <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:14px 0;">
+          <div class="stat-box"><small style="color:var(--text-secondary);">Official average</small><h2 id="officialMarksAverage" style="margin-top:5px;">—</h2></div>
+          <div class="stat-box"><small style="color:var(--text-secondary);">Results recorded</small><h2 id="officialMarksCount" style="margin-top:5px;">0</h2></div>
+        </div>
+        <div id="officialMarksList" aria-live="polite"><p style="color:var(--text-secondary);">Loading your school results…</p></div>
+      </div>
+
       <!-- Quick Summary Card -->
       <div class="grid-cards" style="margin-bottom: 24px;">
         <div class="card">
@@ -124,6 +142,60 @@
       html.setAttribute('data-theme', nextTheme);
       localStorage.setItem('auraway_theme', nextTheme);
     });
+
+    // Official school results are loaded only after Supabase confirms the student's identity.
+    async function loadOfficialSchoolMarks(profile) {
+      const list = document.getElementById('officialMarksList');
+      const average = document.getElementById('officialMarksAverage');
+      const count = document.getElementById('officialMarksCount');
+      if (!supabaseClient || !profile?.id) {
+        list.textContent = 'Sign in to view your official school results.';
+        return;
+      }
+      list.textContent = 'Loading your school results…';
+      const { data, error } = await supabaseClient.from('student_marks')
+        .select('id,exam_name,subject,marks_obtained,marks_total,assessed_on,teacher_note')
+        .eq('student_id', profile.id)
+        .order('assessed_on', { ascending: false });
+      if (error) {
+        list.textContent = 'Your official results could not be loaded. Please try again later.';
+        return;
+      }
+      const rows = data || [];
+      count.textContent = String(rows.length);
+      if (!rows.length) {
+        average.textContent = '—';
+        list.textContent = 'Your teacher has not published any examination results yet.';
+        return;
+      }
+      const percentages = rows.map(mark => Number(mark.marks_obtained) / Number(mark.marks_total) * 100);
+      average.textContent = (percentages.reduce((sum, value) => sum + value, 0) / percentages.length).toFixed(1) + '%';
+      list.innerHTML = '';
+      rows.forEach(mark => {
+        const pct = Number(mark.marks_obtained) / Number(mark.marks_total) * 100;
+        const row = document.createElement('div');
+        row.className = 'mark-item';
+        const detail = document.createElement('div');
+        const label = document.createElement('span');
+        label.style.cssText = 'font-size:.78rem;color:var(--accent-primary);font-weight:700;';
+        label.textContent = mark.subject + ' · ' + mark.exam_name;
+        const score = document.createElement('h4');
+        score.style.cssText = 'font-size:1.05rem;margin-top:4px;';
+        score.textContent = mark.marks_obtained + ' / ' + mark.marks_total + ' (' + Math.round(pct) + '%)';
+        const date = document.createElement('p');
+        date.style.cssText = 'font-size:.78rem;color:var(--text-secondary);margin-top:3px;';
+        date.textContent = 'Recorded: ' + mark.assessed_on + (mark.teacher_note ? ' · ' + mark.teacher_note : '');
+        detail.append(label, score, date);
+        const badge = document.createElement('span');
+        badge.className = 'grade-badge ' + (pct >= 80 ? 'grade-a' : pct >= 70 ? 'grade-b' : pct >= 50 ? 'grade-c' : 'grade-f');
+        badge.textContent = pct >= 90 ? 'A+ · Outstanding' : pct >= 80 ? 'A · Excellent' : pct >= 70 ? 'B · Good' : pct >= 50 ? 'C · Average' : 'Needs work';
+        row.append(detail, badge);
+        list.appendChild(row);
+      });
+    }
+
+    window.addEventListener('pulseStudentReady', event => loadOfficialSchoolMarks(event.detail?.profile));
+    if (window.PULSE_CURRENT_STUDENT) loadOfficialSchoolMarks(window.PULSE_CURRENT_STUDENT);
 
     // Marks State
     let marks = JSON.parse(localStorage.getItem('auraway_marks')) || [
