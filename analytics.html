@@ -48,6 +48,7 @@
       <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr));margin-bottom:16px;">
         <div class="card"><h3>Attendance</h3><p class="analytics-stat" id="attendancePercent">—</p><p class="muted" id="attendanceDetail">Loading records…</p></div>
         <div class="card"><h3>Assignments done</h3><p class="analytics-stat" id="completedCount">—</p><p class="muted" id="assignmentDetail">Loading assignments…</p></div>
+        <div class="card"><h3>Official marks average</h3><p class="analytics-stat" id="officialMarksAverage">—</p><p class="muted" id="officialMarksDetail">Loading exam results…</p></div>
       </div>
       <div class="analytics-grid">
         <section class="card analytics-card">
@@ -62,8 +63,14 @@
           <div class="chart-wrap"><canvas id="assignmentChart" role="img" aria-label="Chart of completed and pending assignments"></canvas></div>
           <p class="muted" id="assignmentMessage" aria-live="polite"></p>
         </section>
+        <section class="card analytics-card">
+          <h3>Examination Performance</h3>
+          <p class="muted" style="font-size:.85rem;margin-top:4px;">Recent official results recorded by your teacher</p>
+          <div class="chart-wrap"><canvas id="officialMarksChart" role="img" aria-label="Chart of official examination marks percentages"></canvas></div>
+          <p class="muted" id="officialMarksMessage" aria-live="polite"></p>
+        </section>
       </div>
-      <p class="muted" style="font-size:.78rem;margin-top:16px;">These charts use the attendance and classroom records saved for your student account.</p>
+      <p class="muted" style="font-size:.78rem;margin-top:16px;">These charts use attendance, classroom and teacher-published examination records saved for your student account.</p>
     </main>
   </div>
   <script>
@@ -117,6 +124,37 @@
       document.getElementById('assignmentDetail').textContent=done+' completed · '+pending+' pending';
       charts.push({id:'assignmentChart',labels:['Done','Pending'],values:[done,pending],colors:['#10b981','#f59e0b']});
       document.getElementById('assignmentMessage').textContent=assignments.length?'Based on '+assignments.length+' assignments assigned to you':'No assignments assigned yet.';
+
+      const marksResult = await supabaseClient.from('student_marks')
+        .select('exam_name,subject,marks_obtained,marks_total,assessed_on')
+        .eq('student_id', profile.id)
+        .order('assessed_on', { ascending: false }).limit(12);
+      if (marksResult.error) {
+        document.getElementById('officialMarksAverage').textContent = '—';
+        document.getElementById('officialMarksDetail').textContent = 'Official results are temporarily unavailable.';
+        document.getElementById('officialMarksMessage').textContent = 'Please refresh later or ask your teacher for help.';
+        charts.push({id:'officialMarksChart',labels:[],values:[],colors:['#8b5cf6']});
+      } else {
+        const officialMarks = marksResult.data || [];
+        if (!officialMarks.length) {
+          document.getElementById('officialMarksAverage').textContent = '—';
+          document.getElementById('officialMarksDetail').textContent = 'No results published yet';
+          document.getElementById('officialMarksMessage').textContent = 'Your teacher has not published examination results yet.';
+          charts.push({id:'officialMarksChart',labels:[],values:[],colors:['#8b5cf6']});
+        } else {
+          const percentages = officialMarks.map(mark => Number(mark.marks_obtained) / Number(mark.marks_total) * 100);
+          const average = percentages.reduce((sum,value)=>sum+value,0) / percentages.length;
+          document.getElementById('officialMarksAverage').textContent = average.toFixed(1) + '%';
+          document.getElementById('officialMarksDetail').textContent = officialMarks.length + ' teacher-published results';
+          document.getElementById('officialMarksMessage').textContent = 'Showing your latest ' + officialMarks.length + ' official results.';
+          charts.push({
+            id:'officialMarksChart',
+            labels:officialMarks.slice().reverse().map(mark => mark.subject.length > 9 ? mark.subject.slice(0,8)+'…' : mark.subject),
+            values:percentages.slice().reverse().map(value => Math.round(value)),
+            colors:percentages.slice().reverse().map(value => value >= 80 ? '#10b981' : value >= 50 ? '#f59e0b' : '#ef4444')
+          });
+        }
+      }
       redraw();
     }
     window.addEventListener('resize',redraw);
