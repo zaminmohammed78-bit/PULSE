@@ -16,27 +16,45 @@
     <!-- Navigation Sidebar -->
     <sidebar id="aurawaySidebar" aria-label="Main navigation">
       <div class="logo-area">PULSE</div>
-      <ul class="nav-links" id="aurawayNavLinks">
-        <li class="nav-group-label">Overview</li>
-        <li><a href="index.html">📊 Dashboard</a></li>
-        <li class="nav-group-label">Plan & Learn</li>
-        <li><a href="planner.html">📅 Study Planner</a></li>
-        <li><a href="timetable.html">🗓️ Timetable</a></li>
-        <li><a href="exam.html">🎯 Exams</a></li>
-        <li><a href="marks.html">📈 Marks Manager</a></li>
-        <li><a href="attendance.html">📋 Attendance</a></li>
-        <li><a href="flashcards.html">🗂️ Flashcards</a></li>
-        <li><a href="classroom.html">🎓 Classroom</a></li>
-        <li><a href="notes.html">📝 Digital Notes</a></li>
-        <li class="nav-group-label">Insights</li>
-        <li><a href="analytics.html">📊 Analytics</a></li>
-        <li><a href="focus.html">⏱️ Focus Centre</a></li>
-        <li><a href="wellness.html">🌱 Wellness</a></li>
-        <li><a href="progress.html">🏆 Progress</a></li>
-        <li class="nav-group-label">More</li>
-        <li><a href="search.html">🔍 Search</a></li>
-        <li><a href="settings.html">⚙️ Settings</a></li>
-      </ul>
+      <div class="student-nav-tools">
+        <label class="student-nav-search-label" for="studentNavSearch">Find a feature</label>
+        <input id="studentNavSearch" class="student-nav-search" type="search" placeholder="Search menu..." autocomplete="off">
+      </div>
+      <nav class="student-nav-groups" id="studentNavGroups" aria-label="Student portal navigation">
+        <details class="student-nav-group" open>
+          <summary>📌 Overview <span class="nav-count">1</span></summary>
+          <ul><li><a href="index.html">📊 Dashboard</a></li></ul>
+        </details>
+        <details class="student-nav-group">
+          <summary>📚 Plan &amp; Learn <span class="nav-count">7</span></summary>
+          <ul>
+            <li><a href="planner.html">📅 Study Planner</a></li>
+            <li><a href="timetable.html">🗓️ Timetable</a></li>
+            <li><a href="exam.html">🎯 Exams</a></li>
+            <li><a href="marks.html">📈 Marks Manager</a></li>
+            <li><a href="attendance.html">📋 Attendance</a></li>
+            <li><a href="flashcards.html">🗂️ Flashcards</a></li>
+            <li><a href="classroom.html">🎓 Classroom</a></li>
+            <li><a href="notes.html">📝 Digital Notes</a></li>
+          </ul>
+        </details>
+        <details class="student-nav-group">
+          <summary>📈 Insights <span class="nav-count">4</span></summary>
+          <ul>
+            <li><a href="analytics.html">📊 Analytics</a></li>
+            <li><a href="focus.html">⏱️ Focus Centre</a></li>
+            <li><a href="wellness.html">🌱 Wellness</a></li>
+            <li><a href="progress.html">🏆 Progress</a></li>
+          </ul>
+        </details>
+        <details class="student-nav-group">
+          <summary>⚙️ More <span class="nav-count">2</span></summary>
+          <ul>
+            <li><a href="search.html">🔍 Search</a></li>
+            <li><a href="settings.html">⚙️ Settings</a></li>
+          </ul>
+        </details>
+      </nav>
     </sidebar>
 
     <!-- Main Content -->
@@ -123,6 +141,38 @@
       html.setAttribute('data-theme', nextTheme);
       localStorage.setItem('auraway_theme', nextTheme);
     });
+
+    // Student navigation: live filter, collapsible groups, and active-page expansion
+    const studentNavSearch = document.getElementById('studentNavSearch');
+    const studentNavGroups = document.getElementById('studentNavGroups');
+    if (studentNavSearch && studentNavGroups) {
+      studentNavSearch.addEventListener('input', () => {
+        const query = studentNavSearch.value.trim().toLowerCase();
+        studentNavGroups.querySelectorAll('.student-nav-group').forEach(group => {
+          let matches = 0;
+          group.querySelectorAll('li').forEach(item => {
+            const match = item.textContent.toLowerCase().includes(query);
+            item.hidden = !match;
+            if (match) matches++;
+          });
+          group.hidden = matches === 0;
+          if (query && matches) group.open = true;
+        });
+      });
+      const currentPage = location.pathname.split('/').pop() || 'index.html';
+      studentNavGroups.querySelectorAll('a').forEach(link => {
+        if (link.getAttribute('href') === currentPage) {
+          link.classList.add('active');
+          link.closest('details')?.setAttribute('open', '');
+        }
+        link.addEventListener('click', () => {
+          if (window.matchMedia('(max-width: 767px)').matches) {
+            document.body.classList.remove('sidebar-open');
+            document.getElementById('menuToggle')?.setAttribute('aria-expanded', 'false');
+          }
+        });
+      });
+    }
 
     // Dynamic Date & Greeting
     const now = new Date();
