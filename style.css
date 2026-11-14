@@ -295,3 +295,34 @@ sidebar#aurawaySidebar { transition:transform .24s ease; }
     pointer-events:auto;
   }
 }
+
+/* PULSE PREMIUM PORTAL SYSTEM — presentation-only shared layer */
+:root{--pulse-panel:rgba(20,27,48,.82);--pulse-line:rgba(148,163,184,.16);--pulse-glow:0 24px 70px rgba(3,8,25,.28);--pulse-radius-lg:22px}
+[data-theme="light"]{--pulse-panel:rgba(255,255,255,.9);--pulse-line:rgba(71,85,105,.14);--pulse-glow:0 20px 55px rgba(44,55,95,.08)}
+body.pulse-student-portal,body.pulse-teacher-portal,body.pulse-parent-portal{background:radial-gradient(ellipse at 4% 0%,rgba(124,92,246,.16),transparent 34rem),radial-gradient(ellipse at 96% 12%,rgba(34,211,238,.10),transparent 32rem),var(--bg-primary)}
+.pulse-student-portal main{max-width:1520px}
+.pulse-student-portal .header-bar,.pulse-teacher-portal .header-bar,.pulse-parent-portal .header-bar{padding:clamp(18px,2.8vw,30px);border:1px solid var(--pulse-line);border-radius:var(--pulse-radius-lg);background:linear-gradient(115deg,rgba(124,92,246,.12),rgba(34,211,238,.055)),var(--pulse-panel);box-shadow:var(--pulse-glow)}
+.pulse-student-portal .card,.pulse-teacher-portal .card,.pulse-parent-portal .card{border:1px solid var(--pulse-line);border-radius:var(--pulse-radius-lg);box-shadow:var(--pulse-glow);transition:border-color .2s ease,transform .2s ease}
+.pulse-student-portal .card:hover,.pulse-teacher-portal .card:hover,.pulse-parent-portal .card:hover{border-color:rgba(139,92,246,.3)}
+.pulse-student-portal .grid-cards,.pulse-teacher-portal .grid-cards,.pulse-parent-portal .grid-cards{gap:18px}
+.pulse-student-portal .nav-links a.active{box-shadow:inset 3px 0 0 var(--accent-primary)}
+.pulse-student-portal .btn,.pulse-teacher-portal .btn,.pulse-parent-portal .btn{min-height:44px;border-radius:13px;letter-spacing:.005em}
+.pulse-student-portal input,.pulse-student-portal select,.pulse-student-portal textarea,.pulse-teacher-portal input,.pulse-teacher-portal select,.pulse-teacher-portal textarea,.pulse-parent-portal input,.pulse-parent-portal select,.pulse-parent-portal textarea{min-height:46px;border-radius:13px}
+.pulse-teacher-portal .standalone-wrap,.pulse-parent-portal .standalone-wrap{width:min(100% - 40px,1280px);max-width:1280px;padding:clamp(22px,3.2vw,42px) 0}
+.pulse-teacher-portal #teacherLoginPanel{width:min(100% - 32px,500px);max-width:500px!important;min-height:100vh;display:flex;align-items:center}
+.pulse-teacher-portal #teacherLoginPanel .card{width:100%;padding:clamp(26px,4vw,42px);background:linear-gradient(145deg,rgba(124,92,246,.13),transparent 60%),var(--bg-card)}
+.pulse-teacher-portal #teacherLoginPanel h1{font-size:clamp(1.7rem,4vw,2.25rem);letter-spacing:-.05em}
+.pulse-teacher-portal #teacherPortalContent{max-width:1440px}
+.pulse-teacher-portal #teacherPortalHeading{font-size:clamp(1.6rem,3vw,2.25rem)}
+.pulse-teacher-portal .portal-section-nav{position:sticky;top:12px;z-index:30;padding:10px;border:1px solid var(--pulse-line);border-radius:17px;background:var(--pulse-panel);backdrop-filter:blur(18px);box-shadow:var(--pulse-glow)}
+.pulse-teacher-portal .portal-section-nav .btn{min-height:40px;padding:8px 13px;box-shadow:none}
+.pulse-teacher-portal .portal-form{gap:12px}
+.pulse-teacher-portal .student-row{padding:14px 16px;border-radius:15px;background:var(--pulse-panel)!important}
+.pulse-teacher-portal .stat-box,.pulse-parent-portal .stat-box{border:1px solid var(--pulse-line);border-radius:17px;background:var(--pulse-panel)}
+.pulse-parent-portal .standalone-wrap{max-width:1120px}
+.pulse-parent-portal .parent-access-card{padding:clamp(20px,3vw,30px);background:linear-gradient(125deg,rgba(124,92,246,.13),rgba(34,211,238,.045)),var(--bg-card)}
+.pulse-parent-portal .parent-access-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;margin-top:14px}
+.pulse-parent-portal #parentReportCard>.card:first-child{background:linear-gradient(115deg,rgba(16,185,129,.10),rgba(124,92,246,.08)),var(--bg-card)}
+.pulse-parent-portal .hw-row{padding:14px 16px;border-radius:14px;background:var(--pulse-panel);border-color:var(--pulse-line)}
+@media(max-width:767px){.pulse-teacher-portal .standalone-wrap,.pulse-parent-portal .standalone-wrap{width:min(100% - 24px,100%)}.pulse-teacher-portal .header-bar,.pulse-parent-portal .header-bar{padding:18px}.pulse-teacher-portal .portal-section-nav{top:8px;gap:6px!important}.pulse-teacher-portal .portal-section-nav .btn{flex:1 1 auto;font-size:.8rem}.pulse-parent-portal .parent-access-form{grid-template-columns:1fr}.pulse-parent-portal .parent-access-form .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.pulse-student-portal .card,.pulse-teacher-portal .card,.pulse-parent-portal .card{transition:none}}
