@@ -89,13 +89,13 @@
     let currentAssignments = [];
 
     async function initClassroom() {
-      const code = localStorage.getItem('auraway_student_code');
-      if (!code) return;
+      const student = window.PULSE_CURRENT_STUDENT;
+      const code = student?.student_code;
+      if (!student || !code) return;
 
       document.getElementById('activeCodeDisplay').textContent = code;
 
-      const { data: profile } = await supabaseClient.rpc('get_student_profile_by_code', { p_student_code: code }).maybeSingle();
-      currentStudent = profile || JSON.parse(localStorage.getItem('auraway_student_profile') || 'null');
+      currentStudent = student;
 
       if (currentStudent) {
         document.getElementById('studentWelcomeName').textContent = `Welcome, ${currentStudent.student_name} 👋`;
@@ -106,7 +106,7 @@
 
       const [{ data: hwData, error: homeworkError }, { data: doneData, error: statusError }] = await Promise.all([
         supabaseClient.from('assignments').select('*').order('due_date', { ascending: true }),
-        supabaseClient.rpc('get_student_updates_by_code', { p_student_code: code })
+        supabaseClient.from('student_updates').select('assignment_id,status,updated_at').eq('student_code', code).order('updated_at', { ascending: false })
       ]);
 
       const container = document.getElementById('assignmentsList');
@@ -186,7 +186,8 @@
       alert('✅ Sent to your teacher!');
     }
 
-    initClassroom();
+    if (window.PULSE_CURRENT_STUDENT) initClassroom();
+    else window.addEventListener('pulseStudentReady', initClassroom, { once: true });
   </script>
   <script src="navigation.js" defer></script>
 </body>
