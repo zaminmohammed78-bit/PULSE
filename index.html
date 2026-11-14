@@ -21,39 +21,29 @@
         <input id="studentNavSearch" class="student-nav-search" type="search" placeholder="Search menu..." autocomplete="off">
       </div>
       <nav class="student-nav-groups" id="studentNavGroups" aria-label="Student portal navigation">
-        <details class="student-nav-group" open>
-          <summary>📌 Overview <span class="nav-count">1</span></summary>
-          <ul><li><a href="index.html">📊 Dashboard</a></li></ul>
-        </details>
-        <details class="student-nav-group">
-          <summary>📚 Plan &amp; Learn <span class="nav-count">7</span></summary>
-          <ul>
-            <li><a href="planner.html">📅 Study Planner</a></li>
-            <li><a href="timetable.html">🗓️ Timetable</a></li>
-            <li><a href="exam.html">🎯 Exams</a></li>
-            <li><a href="marks.html">📈 Marks Manager</a></li>
-            <li><a href="attendance.html">📋 Attendance</a></li>
-            <li><a href="flashcards.html">🗂️ Flashcards</a></li>
-            <li><a href="classroom.html">🎓 Classroom</a></li>
-            <li><a href="notes.html">📝 Digital Notes</a></li>
-          </ul>
-        </details>
-        <details class="student-nav-group">
-          <summary>📈 Insights <span class="nav-count">4</span></summary>
-          <ul>
-            <li><a href="analytics.html">📊 Analytics</a></li>
-            <li><a href="focus.html">⏱️ Focus Centre</a></li>
-            <li><a href="wellness.html">🌱 Wellness</a></li>
-            <li><a href="progress.html">🏆 Progress</a></li>
-          </ul>
-        </details>
-        <details class="student-nav-group">
-          <summary>⚙️ More <span class="nav-count">2</span></summary>
-          <ul>
-            <li><a href="search.html">🔍 Search</a></li>
-            <li><a href="settings.html">⚙️ Settings</a></li>
-          </ul>
-        </details>
+        <section class="student-nav-section"><h2>OVERVIEW</h2><ul>
+          <li><a href="index.html">📊 <span>Dashboard</span></a></li>
+        </ul></section>
+        <section class="student-nav-section"><h2>PLAN &amp; LEARN</h2><ul>
+          <li><a href="planner.html">📅 <span>Study Planner</span></a></li>
+          <li><a href="timetable.html">🗓️ <span>Timetable</span></a></li>
+          <li><a href="exam.html">🎯 <span>Exams</span></a></li>
+          <li><a href="marks.html">📈 <span>Marks Manager</span></a></li>
+          <li><a href="attendance.html">📋 <span>Attendance</span></a></li>
+          <li><a href="flashcards.html">🗂️ <span>Flashcards</span></a></li>
+          <li><a href="classroom.html">🎓 <span>Classroom</span></a></li>
+          <li><a href="notes.html">📝 <span>Digital Notes</span></a></li>
+        </ul></section>
+        <section class="student-nav-section"><h2>INSIGHTS</h2><ul>
+          <li><a href="analytics.html">📊 <span>Analytics</span></a></li>
+          <li><a href="focus.html">⏱️ <span>Focus Centre</span></a></li>
+          <li><a href="wellness.html">🌱 <span>Wellness</span></a></li>
+          <li><a href="progress.html">🏆 <span>Progress</span></a></li>
+        </ul></section>
+        <section class="student-nav-section"><h2>MORE</h2><ul>
+          <li><a href="search.html">🔍 <span>Search</span></a></li>
+          <li><a href="settings.html">⚙️ <span>Settings</span></a></li>
+        </ul></section>
       </nav>
     </sidebar>
 
@@ -142,13 +132,13 @@
       localStorage.setItem('auraway_theme', nextTheme);
     });
 
-    // Student navigation: live filter, collapsible groups, and active-page expansion
+    // Student navigation: live filter and active-page highlighting
     const studentNavSearch = document.getElementById('studentNavSearch');
     const studentNavGroups = document.getElementById('studentNavGroups');
     if (studentNavSearch && studentNavGroups) {
       studentNavSearch.addEventListener('input', () => {
         const query = studentNavSearch.value.trim().toLowerCase();
-        studentNavGroups.querySelectorAll('.student-nav-group').forEach(group => {
+        studentNavGroups.querySelectorAll('.student-nav-section').forEach(group => {
           let matches = 0;
           group.querySelectorAll('li').forEach(item => {
             const match = item.textContent.toLowerCase().includes(query);
@@ -156,7 +146,6 @@
             if (match) matches++;
           });
           group.hidden = matches === 0;
-          if (query && matches) group.open = true;
         });
       });
       const currentPage = location.pathname.split('/').pop() || 'index.html';
