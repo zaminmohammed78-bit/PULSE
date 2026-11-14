@@ -46,6 +46,7 @@
     <nav class="portal-section-nav" aria-label="Teacher portal sections" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px;">
       <button type="button" class="btn" onclick="document.getElementById('teacherStudentsSection').scrollIntoView({behavior:'smooth'})">👥 Students</button>
       <button type="button" class="btn" onclick="document.getElementById('teacherAttendanceManager').scrollIntoView({behavior:'smooth'})">📋 Attendance</button>
+      <button type="button" class="btn" onclick="document.getElementById('teacherMarksSection').scrollIntoView({behavior:'smooth'})">📝 Marks</button>
       <button type="button" class="btn" style="background:#0f766e;" onclick="document.getElementById('teacherAssignmentsSection').scrollIntoView({behavior:'smooth'})">📚 Assignments</button>
       <button type="button" class="btn" onclick="document.getElementById('teacherActivitySection').scrollIntoView({behavior:'smooth'})">🔔 Activity</button>
       <button type="button" class="btn" onclick="document.getElementById('teacherAnalyticsSection').scrollIntoView({behavior:'smooth'})">📊 Analytics</button>
@@ -129,6 +130,30 @@
       <p id="teacherAnalyticsMessage" role="status" style="color:var(--text-secondary);font-size:.85rem;margin-top:12px;">Loading class analytics…</p>
     </section>
 
+    <section id="teacherMarksSection" class="card" style="margin:0 0 20px;" aria-labelledby="teacherMarksHeading">
+      <h3 id="teacherMarksHeading">📝 Examination Marks Manager</h3>
+      <p style="color:var(--text-secondary);font-size:.85rem;margin:5px 0 14px;">Record official exam results. Each student can see only their own marks in the Student Portal.</p>
+      <form id="teacherMarksForm" class="portal-form">
+        <select id="teacherMarkStudent" class="input-field" required><option value="">Choose student</option></select>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+          <input id="teacherMarkExam" class="input-field" maxlength="120" placeholder="Exam name" required>
+          <input id="teacherMarkSubject" class="input-field" maxlength="80" placeholder="Subject" required>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+          <input id="teacherMarkObtained" class="input-field" type="number" min="0" step="0.01" placeholder="Marks obtained" required>
+          <input id="teacherMarkTotal" class="input-field" type="number" min="0.01" step="0.01" placeholder="Maximum marks" required>
+          <input id="teacherMarkDate" class="input-field" type="date" required>
+        </div>
+        <input id="teacherMarkNote" class="input-field" maxlength="500" placeholder="Optional teacher note">
+        <button type="submit" class="btn">Save examination result</button>
+        <p id="teacherMarksMessage" role="status" style="margin:0;color:var(--text-secondary);"></p>
+      </form>
+      <div style="margin-top:18px;">
+        <h4>Recently recorded results</h4>
+        <div id="teacherMarksRecent" style="margin-top:10px;"><p style="color:var(--text-secondary);">Loading results…</p></div>
+      </div>
+    </section>
+
     <section id="teacherActivitySection">
     <!-- Live Student Updates -->
     <div class="card" style="margin-bottom: 20px;">
@@ -209,6 +234,7 @@
       document.getElementById('teacherPortalContent').style.display = 'block';
       document.getElementById('teacherPortalHeading').textContent = 'PULSE — ' + name;
       await loadStudentsRoster();
+      await loadTeacherMarks();
       await loadTeacherAnalytics();
       loadStudentActivity();
       loadAssignmentOverview();
@@ -290,6 +316,7 @@
       allStudents = data || [];
       populateAttendanceClasses();
       populateAssignmentTargets();
+      populateTeacherMarkStudents();
       if (allStudents.length === 0) {
         container.innerHTML = '<p style="color:var(--text-secondary);">No students added yet.</p>';
         return;
@@ -318,6 +345,92 @@
         container.appendChild(div);
       });
     }
+
+    function populateTeacherMarkStudents() {
+      const select = document.getElementById('teacherMarkStudent');
+      if (!select) return;
+      const selected = select.value;
+      select.innerHTML = '<option value="">Choose student</option>';
+      allStudents.forEach(student => {
+        const option = document.createElement('option');
+        option.value = String(student.id);
+        option.textContent = student.student_name + ' — ' + student.class_name + ' (' + student.student_code + ')';
+        select.appendChild(option);
+      });
+      if (selected && allStudents.some(student => String(student.id) === selected)) select.value = selected;
+    }
+
+    async function loadTeacherMarks() {
+      const container = document.getElementById('teacherMarksRecent');
+      if (!container) return;
+      const { data, error } = await supabaseClient.from('student_marks')
+        .select('id,student_id,exam_name,subject,marks_obtained,marks_total,assessed_on')
+        .order('assessed_on', { ascending: false }).limit(20);
+      if (error) {
+        container.textContent = 'Could not load examination results: ' + error.message;
+        return;
+      }
+      container.innerHTML = '';
+      if (!data?.length) {
+        container.textContent = 'No examination results recorded yet.';
+        return;
+      }
+      data.forEach(mark => {
+        const student = allStudents.find(item => item.id === mark.student_id);
+        const row = document.createElement('div');
+        row.className = 'student-row';
+        const detail = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = (student?.student_name || 'Student') + ' · ' + mark.subject;
+        const sub = document.createElement('div');
+        sub.style.cssText = 'color:var(--text-secondary);font-size:.82rem;margin-top:3px;';
+        sub.textContent = mark.exam_name + ' · ' + mark.assessed_on;
+        detail.append(title, sub);
+        const score = document.createElement('strong');
+        score.textContent = mark.marks_obtained + ' / ' + mark.marks_total + ' (' + Math.round(Number(mark.marks_obtained) / Number(mark.marks_total) * 100) + '%)';
+        row.append(detail, score);
+        container.appendChild(row);
+      });
+    }
+
+    document.getElementById('teacherMarksForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const message = document.getElementById('teacherMarksMessage');
+      const studentId = Number(document.getElementById('teacherMarkStudent').value);
+      const examName = document.getElementById('teacherMarkExam').value.trim();
+      const subject = document.getElementById('teacherMarkSubject').value.trim();
+      const obtained = Number(document.getElementById('teacherMarkObtained').value);
+      const total = Number(document.getElementById('teacherMarkTotal').value);
+      const assessedOn = document.getElementById('teacherMarkDate').value;
+      const note = document.getElementById('teacherMarkNote').value.trim();
+      if (!studentId || !examName || !subject || !assessedOn || !Number.isFinite(obtained) || !Number.isFinite(total) || total <= 0 || obtained < 0 || obtained > total) {
+        message.textContent = 'Check the student, exam details and marks. Obtained marks must not exceed the maximum.';
+        return;
+      }
+      const button = event.submitter;
+      if (button) { button.disabled = true; button.textContent = 'Saving…'; }
+      message.textContent = '';
+      const { error } = await supabaseClient.from('student_marks').insert({
+        student_id: studentId,
+        exam_name: examName,
+        subject,
+        marks_obtained: obtained,
+        marks_total: total,
+        assessed_on: assessedOn,
+        teacher_note: note || null
+      });
+      if (button) { button.disabled = false; button.textContent = 'Save examination result'; }
+      if (error) {
+        message.textContent = 'Could not save marks: ' + error.message;
+        return;
+      }
+      message.textContent = 'Result saved. The student can now see it in their Marks Manager.';
+      event.target.reset();
+      document.getElementById('teacherMarkDate').value = new Date().toISOString().slice(0, 10);
+      await loadTeacherMarks();
+    });
+
+    document.getElementById('teacherMarkDate').value = new Date().toISOString().slice(0, 10);
 
     async function deleteStudent(id, name) {
       if (!confirm(`Remove ${name}? Their student code will stop working immediately.`)) return;
