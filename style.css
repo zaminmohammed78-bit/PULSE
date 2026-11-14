@@ -400,3 +400,7 @@ html[data-theme="dark"] .pulse-student-portal .stat-box,html[data-theme="dark"] 
 html[data-theme="dark"] .pulse-student-portal .card:hover,html[data-theme="dark"] .pulse-teacher-portal .card:hover,html[data-theme="dark"] .pulse-parent-portal .card:hover{border-color:rgba(185,145,255,.26)!important;box-shadow:0 15px 34px rgba(8,6,16,.28),0 0 20px rgba(145,92,225,.055),inset 0 1px 0 rgba(255,255,255,.06)!important}
 html[data-theme="dark"] .pulse-student-portal .nav-group-label{color:#827c96}html[data-theme="light"] body.pulse-student-portal,html[data-theme="light"] body.pulse-teacher-portal,html[data-theme="light"] body.pulse-parent-portal{background:#f0eef7}
 @media(max-width:767px){html[data-theme="dark"] .pulse-student-portal sidebar#aurawaySidebar{background:linear-gradient(160deg,#292634,#1f1d29)!important}}
+
+/* Student theme switcher stays visible in the dashboard header on every screen */
+.pulse-student-portal .student-theme-toggle{flex:0 0 auto;white-space:nowrap;min-height:40px;padding:9px 14px;}
+@media(max-width:767px){.pulse-student-portal .header-bar{align-items:center;gap:10px}.pulse-student-portal .student-theme-toggle{font-size:.78rem;padding:8px 10px;min-height:38px}}
