@@ -15,6 +15,10 @@
     .student-row { display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 8px; background: var(--bg-primary); gap: 10px; flex-wrap: wrap; }
     .code-badge { background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
     .stat-box { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 14px; border-radius: var(--radius); }
+    .roster-tools { display:grid;grid-template-columns:minmax(0,1.6fr) minmax(150px,.8fr);gap:10px;margin:0 0 14px; }
+    .roster-tools input,.roster-tools select { width:100%;min-width:0; }
+    .roster-count { color:var(--text-secondary);font-size:.82rem;margin:0 0 10px; }
+    @media(max-width:520px){.roster-tools{grid-template-columns:1fr;}}
   </style>
 </head>
 <body class="pulse-teacher-portal">
@@ -91,6 +95,13 @@
         <h3>📋 Registered Students & Codes</h3>
         <button class="btn" style="font-size:0.8rem; padding:6px 12px;" onclick="toggleSelectAll()">Select / Deselect All</button>
       </div>
+      <div class="roster-tools" role="search" aria-label="Find students">
+        <input id="studentRosterSearch" class="input-field" type="search" placeholder="Search by student name or code…" autocomplete="off" aria-label="Search students">
+        <select id="studentRosterClassFilter" class="input-field" aria-label="Filter students by class">
+          <option value="">All classes</option>
+        </select>
+      </div>
+      <p id="studentRosterCount" class="roster-count" aria-live="polite">Loading student list…</p>
       <div id="studentsRosterList">
         <p style="color:var(--text-secondary);">Loading students...</p>
       </div>
@@ -306,6 +317,88 @@
 
     let allStudents = [];
 
+    function renderStudentsRoster() {
+      const container = document.getElementById('studentsRosterList');
+      const count = document.getElementById('studentRosterCount');
+      const query = (document.getElementById('studentRosterSearch')?.value || '').trim().toLowerCase();
+      const className = document.getElementById('studentRosterClassFilter')?.value || '';
+      const filtered = allStudents.filter(student => {
+        const matchesClass = !className || student.class_name === className;
+        const searchable = [student.student_name, student.student_code, student.class_name].join(' ').toLowerCase();
+        return matchesClass && searchable.includes(query);
+      });
+      count.textContent = filtered.length + ' of ' + allStudents.length + ' students shown';
+      container.replaceChildren();
+      if (!allStudents.length) {
+        container.textContent = 'No students added yet.';
+        return;
+      }
+      if (!filtered.length) {
+        container.textContent = 'No students match your search. Try another name, code, or class.';
+        return;
+      }
+
+      filtered.forEach(student => {
+        const row = document.createElement('div');
+        row.className = 'student-row';
+        const left = document.createElement('div');
+        left.style.cssText = 'display:flex;align-items:center;gap:10px;min-width:0;';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'student-checkbox';
+        checkbox.value = String(student.id);
+        checkbox.setAttribute('aria-label', 'Select ' + student.student_name);
+        const details = document.createElement('div');
+        details.style.minWidth = '0';
+        const name = document.createElement('strong');
+        name.textContent = student.student_name || 'Unnamed student';
+        const classLabel = document.createElement('span');
+        classLabel.style.cssText = 'color:var(--text-secondary);font-size:.85rem;';
+        classLabel.textContent = ' (' + (student.class_name || 'No class') + ')';
+        const meta = document.createElement('div');
+        meta.style.cssText = 'font-size:.8rem;color:var(--text-secondary);margin-top:2px;';
+        meta.textContent = 'Study: ' + (student.study_hours || '0 hrs') + ' • Attendance: ' + (student.attendance_pct || '100%');
+        details.append(name, classLabel, meta);
+        left.append(checkbox, details);
+
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+        const code = document.createElement('span');
+        code.className = 'code-badge';
+        code.textContent = student.student_code || 'No code';
+        const edit = document.createElement('button');
+        edit.type = 'button'; edit.className = 'btn';
+        edit.style.cssText = 'padding:4px 10px;font-size:.75rem;';
+        edit.textContent = 'Edit';
+        edit.addEventListener('click', () => quickSelectStudent(Number(student.id)));
+        const password = document.createElement('button');
+        password.type = 'button'; password.className = 'btn';
+        password.style.cssText = 'padding:4px 10px;font-size:.75rem;background:#0f766e;';
+        password.textContent = student.auth_user_id ? 'Change Password' : 'Set Password';
+        password.addEventListener('click', () => createStudentLogin(Number(student.id)));
+        const remove = document.createElement('button');
+        remove.type = 'button'; remove.className = 'btn';
+        remove.style.cssText = 'padding:4px 10px;font-size:.75rem;background:#ef4444;';
+        remove.textContent = 'Delete';
+        remove.addEventListener('click', () => deleteStudent(Number(student.id), student.student_name || 'this student'));
+        actions.append(code, edit, password, remove);
+        row.append(left, actions);
+        container.appendChild(row);
+      });
+    }
+
+    function populateRosterClassFilter() {
+      const select = document.getElementById('studentRosterClassFilter');
+      const current = select.value;
+      const classes = [...new Set(allStudents.map(student => student.class_name).filter(Boolean))].sort();
+      select.replaceChildren(new Option('All classes', ''));
+      classes.forEach(name => select.add(new Option(name, name)));
+      if (classes.includes(current)) select.value = current;
+    }
+
+    document.getElementById('studentRosterSearch').addEventListener('input', renderStudentsRoster);
+    document.getElementById('studentRosterClassFilter').addEventListener('change', renderStudentsRoster);
+
     async function loadStudentsRoster() {
       const container = document.getElementById('studentsRosterList');
       const { data, error } = await supabaseClient.from('students').select('*').order('created_at', { ascending: false });
@@ -314,36 +407,11 @@
         return;
       }
       allStudents = data || [];
+      populateRosterClassFilter();
       populateAttendanceClasses();
       populateAssignmentTargets();
       populateTeacherMarkStudents();
-      if (allStudents.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-secondary);">No students added yet.</p>';
-        return;
-      }
-      container.innerHTML = '';
-      allStudents.forEach(st => {
-        const div = document.createElement('div');
-        div.className = 'student-row';
-        div.innerHTML = `
-          <div style="display:flex; align-items:center; gap:10px;">
-            <input type="checkbox" class="student-checkbox" value="${st.id}">
-            <div>
-              <strong>${st.student_name}</strong> <span style="color:var(--text-secondary); font-size:0.85rem;">(${st.class_name})</span>
-              <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:2px;">
-                Study: ${st.study_hours || '0 hrs'} &bull; Attendance: ${st.attendance_pct || '100%'}
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="code-badge">${st.student_code}</span>
-            <button class="btn" style="padding:4px 10px; font-size:0.75rem;" onclick="quickSelectStudent(${st.id})">Edit</button>
-            <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#0f766e;" onclick="createStudentLogin(${st.id})">${st.auth_user_id ? 'Change Password' : 'Set Password'}</button>
-            <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#ef4444;" onclick="deleteStudent(${st.id}, '${st.student_name.replace(/'/g, "\\'")}')">Delete</button>
-          </div>
-        `;
-        container.appendChild(div);
-      });
+      renderStudentsRoster();
     }
 
     function populateTeacherMarkStudents() {
