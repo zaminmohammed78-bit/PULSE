@@ -66,7 +66,6 @@
           <h2 id="generatedCodeDisplay" style="color:#10b981; margin:4px 0;"></h2>
           <p id="generatedLoginPassword" style="margin-top:8px;font-weight:700;word-break:break-all;"></p>
           <small id="generatedLoginInfo" style="display:block;margin-top:6px;color:var(--text-secondary);">Keep the student password private and share it directly with the student.</small>
-          <button type="button" class="btn" id="copyStudentCredentials" style="margin-top:8px;display:none;" onclick="copyStudentCredentials()">Copy student login details</button>
         </div>
       </div>
 
@@ -641,18 +640,6 @@
       await loadStudentsRoster();
     });
 
-    async function copyStudentCredentials() {
-      const credentials = window.PULSE_LAST_STUDENT_CREDENTIALS;
-      if (!credentials) return;
-      const text = 'PULSE student login\\nStudent code: ' + credentials.code + '\\nTemporary password: ' + credentials.password;
-      try {
-        await navigator.clipboard.writeText(text);
-        document.getElementById('generatedLoginInfo').textContent = 'Login details copied. Share them privately with ' + credentials.name + '.';
-      } catch (_) {
-        document.getElementById('generatedLoginInfo').textContent = 'Copy was blocked by this browser. Select and copy the code and password above.';
-      }
-    }
-
     async function createStudentLogin(studentId) {
       const banner = document.getElementById('newCodeBanner');
       const codeDisplay = document.getElementById('generatedCodeDisplay');
@@ -686,7 +673,6 @@
       codeDisplay.textContent = data.student_code;
       passwordDisplay.textContent = 'Permanent password saved successfully.';
       window.PULSE_LAST_STUDENT_CREDENTIALS = { code: data.student_code, name: data.student_name };
-      document.getElementById('copyStudentCredentials').style.display = 'none';
       info.textContent = 'Give the student their code and the password you just created. The password will stay valid until you change it here.';
       alert('Permanent student password saved. Share the password securely with the student now; PULSE will not show it again.');
     }
