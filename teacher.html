@@ -15,6 +15,26 @@
     .student-row { display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 8px; background: var(--bg-primary); gap: 10px; flex-wrap: wrap; }
     .code-badge { background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
     .stat-box { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 14px; border-radius: var(--radius); }
+
+    .teacher-command-center{margin:0 0 22px;padding:clamp(18px,2.5vw,26px);border:1px solid var(--border-color);border-radius:20px;background:linear-gradient(130deg,rgba(99,102,241,.14),rgba(56,189,248,.07)),var(--bg-card);box-shadow:var(--shadow)}
+    .teacher-command-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+    .teacher-command-heading h2{margin:4px 0;font-size:clamp(1.2rem,2.5vw,1.55rem);letter-spacing:-.03em}
+    .teacher-command-heading p{margin:0;color:var(--text-secondary);font-size:.88rem}
+    .teacher-eyebrow{font-size:.68rem;font-weight:800;letter-spacing:.14em;color:var(--accent-hover)}
+    .teacher-live-label{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid var(--border-color);border-radius:99px;color:var(--text-secondary);font-size:.75rem}
+    .teacher-live-label span{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,.12)}
+    .teacher-overview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+    .teacher-overview-card{min-width:0;padding:14px;border:1px solid var(--border-color);border-radius:14px;background:var(--bg-card)}
+    .teacher-overview-card span,.teacher-overview-card small{display:block;color:var(--text-secondary);font-size:.78rem}
+    .teacher-overview-card strong{display:block;margin:5px 0;font-size:1.75rem;line-height:1.2;font-weight:800}
+    .teacher-quick-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+    .teacher-secondary-action{background:var(--bg-secondary);color:var(--text-primary);box-shadow:none}
+    .teacher-roster-tools{display:grid;grid-template-columns:minmax(180px,1fr) minmax(150px,.55fr) auto;gap:9px;margin:14px 0}
+    .teacher-roster-tools .input-field{min-width:0}
+    .teacher-roster-count{align-self:center;color:var(--text-secondary);font-size:.78rem;white-space:nowrap}
+    #studentsRosterList .student-row[hidden]{display:none!important}
+    @media(max-width:600px){.teacher-overview-grid{grid-template-columns:1fr 1fr}.teacher-overview-card:last-child{grid-column:1/-1}.teacher-roster-tools{grid-template-columns:1fr}.teacher-roster-count{white-space:normal}}
+
   </style>
 </head>
 <body class="pulse-teacher-portal">
@@ -51,6 +71,23 @@
       <button type="button" class="btn" onclick="document.getElementById('teacherActivitySection').scrollIntoView({behavior:'smooth'})">🔔 Activity</button>
       <button type="button" class="btn" onclick="document.getElementById('teacherAnalyticsSection').scrollIntoView({behavior:'smooth'})">📊 Analytics</button>
     </nav>
+
+    <section class="teacher-command-center" aria-label="Teacher command center">
+      <div class="teacher-command-heading">
+        <div><span class="teacher-eyebrow">OVERVIEW</span><h2>Teacher Command Center</h2><p>Your school workspace at a glance.</p></div>
+        <span class="teacher-live-label"><span></span> Portal ready</span>
+      </div>
+      <div class="teacher-overview-grid">
+        <article class="teacher-overview-card"><span>Registered students</span><strong id="teacherOverviewStudents">—</strong><small>Across all classes</small></article>
+        <article class="teacher-overview-card"><span>Classes</span><strong id="teacherOverviewClasses">—</strong><small>Unique class groups</small></article>
+        <article class="teacher-overview-card"><span>Login accounts ready</span><strong id="teacherOverviewAccounts">—</strong><small>Students with linked accounts</small></article>
+      </div>
+      <div class="teacher-quick-actions">
+        <button type="button" class="btn" onclick="document.getElementById('addStudentForm').scrollIntoView({behavior:'smooth',block:'center'})">＋ Add student</button>
+        <button type="button" class="btn teacher-secondary-action" onclick="document.getElementById('teacherAttendanceManager').scrollIntoView({behavior:'smooth'})">Mark attendance</button>
+        <button type="button" class="btn teacher-secondary-action" onclick="document.getElementById('assignHwForm').scrollIntoView({behavior:'smooth',block:'center'})">Publish assignment</button>
+      </div>
+    </section>
 
     <div id="teacherStudentsSection">
     <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); margin-bottom: 20px;">
@@ -90,6 +127,11 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <h3>📋 Registered Students & Codes</h3>
         <button class="btn" style="font-size:0.8rem; padding:6px 12px;" onclick="toggleSelectAll()">Select / Deselect All</button>
+      </div>
+      <div class="teacher-roster-tools">
+        <input id="teacherStudentSearch" class="input-field" type="search" placeholder="Search name, class or student code…" aria-label="Search students">
+        <select id="teacherStudentClassFilter" class="input-field" aria-label="Filter students by class"><option value="">All classes</option></select>
+        <span id="teacherRosterCount" class="teacher-roster-count" aria-live="polite">0 students</span>
       </div>
       <div id="studentsRosterList">
         <p style="color:var(--text-secondary);">Loading students...</p>
@@ -317,6 +359,8 @@
       populateAttendanceClasses();
       populateAssignmentTargets();
       populateTeacherMarkStudents();
+      updateTeacherOverview();
+      populateTeacherRosterFilter();
       if (allStudents.length === 0) {
         container.innerHTML = '<p style="color:var(--text-secondary);">No students added yet.</p>';
         return;
@@ -325,6 +369,9 @@
       allStudents.forEach(st => {
         const div = document.createElement('div');
         div.className = 'student-row';
+        div.dataset.studentName = String(st.student_name || '').toLowerCase();
+        div.dataset.studentClass = String(st.class_name || '').toLowerCase();
+        div.dataset.studentCode = String(st.student_code || '').toLowerCase();
         div.innerHTML = `
           <div style="display:flex; align-items:center; gap:10px;">
             <input type="checkbox" class="student-checkbox" value="${st.id}">
@@ -344,7 +391,51 @@
         `;
         container.appendChild(div);
       });
+      filterTeacherRoster();
     }
+
+    function updateTeacherOverview() {
+      const classes = new Set(allStudents.map(student => student.class_name).filter(Boolean));
+      document.getElementById('teacherOverviewStudents').textContent = allStudents.length;
+      document.getElementById('teacherOverviewClasses').textContent = classes.size;
+      document.getElementById('teacherOverviewAccounts').textContent = allStudents.filter(student => Boolean(student.auth_user_id)).length;
+      filterTeacherRoster();
+    }
+
+    function populateTeacherRosterFilter() {
+      const select = document.getElementById('teacherStudentClassFilter');
+      if (!select) return;
+      const current = select.value;
+      const classes = [...new Set(allStudents.map(student => student.class_name).filter(Boolean))].sort();
+      select.innerHTML = '<option value="">All classes</option>';
+      classes.forEach(className => {
+        const option = document.createElement('option');
+        option.value = className.toLowerCase();
+        option.textContent = className;
+        select.appendChild(option);
+      });
+      if (classes.some(name => name.toLowerCase() === current)) select.value = current;
+      filterTeacherRoster();
+    }
+
+    function filterTeacherRoster() {
+      const search = (document.getElementById('teacherStudentSearch')?.value || '').trim().toLowerCase();
+      const className = document.getElementById('teacherStudentClassFilter')?.value || '';
+      const rows = [...document.querySelectorAll('#studentsRosterList .student-row')];
+      let visible = 0;
+      rows.forEach(row => {
+        const matchesSearch = !search || row.dataset.studentName.includes(search) || row.dataset.studentClass.includes(search) || row.dataset.studentCode.includes(search);
+        const matchesClass = !className || row.dataset.studentClass === className;
+        const show = matchesSearch && matchesClass;
+        row.hidden = !show;
+        if (show) visible++;
+      });
+      const count = document.getElementById('teacherRosterCount');
+      if (count) count.textContent = visible + ' of ' + allStudents.length + ' students';
+    }
+
+    document.getElementById('teacherStudentSearch').addEventListener('input', filterTeacherRoster);
+    document.getElementById('teacherStudentClassFilter').addEventListener('change', filterTeacherRoster);
 
     function populateTeacherMarkStudents() {
       const select = document.getElementById('teacherMarkStudent');
