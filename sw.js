@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pulse-pwa-v3';
+const CACHE_NAME = 'pulse-pwa-v4-mobile';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -48,7 +48,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
+    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
       if (cachedResponse) {
         const refresh = fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
