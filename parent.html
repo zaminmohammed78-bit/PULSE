@@ -36,9 +36,27 @@
 <body class="pulse-parent-portal">
   <div class="standalone-wrap">
     <div class="header-bar" style="margin-bottom: 24px;">
-      <div class="welcome-title">
-        <h1>PULSE — Parent Portal 👨‍👩‍👧</h1>
-        <p>Track your child's studying, attendance, teacher requests, and improvement areas.</p>
+      <div class="welcome-title" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <svg viewBox="0 0 500 500" width="48" height="48" aria-hidden="true">
+          <defs>
+            <linearGradient id="shieldGradP" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0284c7" />
+              <stop offset="50%" stop-color="#0d9488" />
+              <stop offset="100%" stop-color="#10b981" />
+            </linearGradient>
+            <linearGradient id="pulseGradP" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0284c7" />
+              <stop offset="100%" stop-color="#2563eb" />
+            </linearGradient>
+          </defs>
+          <path d="M 250 50 C 330 50, 410 80, 420 120 C 430 240, 370 360, 250 430 C 130 360, 70 240, 80 120 C 90 80, 170 50, 250 50 Z" fill="none" stroke="url(#shieldGradP)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 50 240 L 170 240 L 195 200 L 220 280 L 245 140 L 270 300 L 295 220 L 320 240 L 450 240" fill="none" stroke="url(#pulseGradP)" stroke-width="14" stroke-linecap="round" />
+          <polygon points="410,40 420,60 442,63 426,78 430,100 410,88 390,100 394,78 378,63 400,60" fill="#f59e0b" />
+        </svg>
+        <div>
+          <h1>PULSE-P — Parent Portal 👨‍👩‍👧</h1>
+          <p>Track your child's studying, attendance, teacher requests, and improvement areas.</p>
+        </div>
       </div>
       <button class="btn" id="themeToggle">Theme</button>
     </div>

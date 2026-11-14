@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Parent Portal</title>
+  <link rel="stylesheet" href="style.css?v=20261114-parent2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    body { background: var(--bg-primary); color: var(--text-primary); }
+    .standalone-wrap { max-width: 850px; margin: 0 auto; padding: 24px 16px; }
+    .input-field { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 14px; border-radius: var(--radius); font-size: 0.95rem; width: 100%; }
+    .stat-box { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 16px; border-radius: var(--radius); }
+    .hw-row { padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+    .parent-dashboard-hero{position:relative;overflow:hidden;padding:22px;border:1px solid var(--border-color);border-radius:20px;background:linear-gradient(125deg,rgba(99,102,241,.18),rgba(20,184,166,.08)),var(--bg-card);margin-bottom:16px}
+    .parent-dashboard-hero:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-65px;top:-90px;background:rgba(99,102,241,.12);pointer-events:none}
+    .parent-hero-label{font-size:.7rem;font-weight:800;letter-spacing:.13em;color:var(--accent-primary)}
+    .parent-dashboard-hero h2{margin:6px 0 3px;font-size:clamp(1.3rem,3vw,1.8rem)}
+    .parent-dashboard-hero p{margin:0;color:var(--text-secondary);font-size:.88rem}
+    .parent-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 16px}
+    .parent-metric{min-width:0;padding:15px;border:1px solid var(--border-color);border-radius:15px;background:var(--bg-card)}
+    .parent-metric small{display:block;color:var(--text-secondary);font-size:.76rem}
+    .parent-metric strong{display:block;font-size:1.5rem;line-height:1.25;margin-top:5px;overflow-wrap:anywhere}
+    .parent-section-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .parent-section-heading p{margin:3px 0 0;color:var(--text-secondary);font-size:.8rem}
+    .parent-status-pill{display:inline-flex;align-items:center;border-radius:99px;padding:5px 9px;font-size:.75rem;font-weight:700;background:var(--bg-primary);border:1px solid var(--border-color)}
+    .parent-progress-track{height:9px;background:var(--bg-primary);border-radius:99px;overflow:hidden;margin-top:10px}
+    .parent-progress-fill{height:100%;width:0;background:linear-gradient(90deg,#6366f1,#14b8a6);border-radius:99px;transition:width .25s ease}
+    .parent-access-card{border:1px solid var(--border-color)}
+    @media(max-width:680px){.parent-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.parent-dashboard-hero{padding:18px}}
+
+  </style>
+</head>
+<body class="pulse-parent-portal">
+  <div class="standalone-wrap">
+    <div class="header-bar" style="margin-bottom: 24px;">
+      <div class="welcome-title" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <svg viewBox="0 0 500 500" width="48" height="48" aria-hidden="true">
+          <defs>
+            <linearGradient id="shieldGradP" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0284c7" />
+              <stop offset="50%" stop-color="#0d9488" />
+              <stop offset="100%" stop-color="#10b981" />
+            </linearGradient>
+            <linearGradient id="pulseGradP" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0284c7" />
+              <stop offset="100%" stop-color="#2563eb" />
+            </linearGradient>
+          </defs>
+          <path d="M 250 50 C 330 50, 410 80, 420 120 C 430 240, 370 360, 250 430 C 130 360, 70 240, 80 120 C 90 80, 170 50, 250 50 Z" fill="none" stroke="url(#shieldGradP)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 50 240 L 170 240 L 195 200 L 220 280 L 245 140 L 270 300 L 295 220 L 320 240 L 450 240" fill="none" stroke="url(#pulseGradP)" stroke-width="14" stroke-linecap="round" />
+          <polygon points="410,40 420,60 442,63 426,78 430,100 410,88 390,100 394,78 378,63 400,60" fill="#f59e0b" />
+        </svg>
+        <div>
+          <h1>PULSE-P — Parent Portal 👨‍👩‍👧</h1>
+          <p>Track your child's studying, attendance, teacher requests, and improvement areas.</p>
+        </div>
+      </div>
+      <button class="btn" id="themeToggle">Theme</button>
+    </div>
+
+    <div class="card parent-access-card" style="margin-bottom: 20px;">
+      <h3>🔑 Enter Your Child's Student Code</h3>
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin: 6px 0 12px;">Use the access code issued by your child's teacher.</p>
+      <div class="parent-access-form">
+        <input type="text" id="parentCodeInput" class="input-field" placeholder="e.g. CLASS8A-4921" style="text-transform:uppercase;">
+        <button class="btn" onclick="loadParentView()">View Report</button>
+      </div>
+    </div>
+
+    <div id="parentReportCard" style="display: none;">
+      <section class="parent-dashboard-hero" aria-label="Student overview">
+        <span class="parent-hero-label">PARENT OVERVIEW</span>
+        <h2 id="pStudentName">Student Name</h2>
+        <p id="pStudentClass">Class &bull; Code</p>
+      </section>
+
+      <div class="parent-metric-grid" aria-label="Progress summary">
+        <article class="parent-metric"><small>📅 Attendance</small><strong id="pAttendance">—</strong></article>
+        <article class="parent-metric"><small>📖 Study activity</small><strong id="pStudyHours">—</strong></article>
+        <article class="parent-metric"><small>📚 Homework done</small><strong id="pHomeworkCompleted">—</strong></article>
+        <article class="parent-metric"><small>⏳ Homework pending</small><strong id="pHomeworkPending">—</strong></article>
+      </div>
+
+
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="parent-section-heading"><div><h3>📋 Attendance history</h3><p>Records entered by the teacher</p></div><span class="parent-status-pill" id="pAttendanceRecordCount">0 records</span></div>
+        <div id="pAttendanceHistory" style="margin-top:10px;">Enter a student code to load attendance.</div>
+      </div>
+
+      <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-bottom: 16px;">
+        <div class="card">
+          <h3>📩 Teacher's Requests</h3>
+          <p id="pTeacherReq" style="margin-top:10px; line-height:1.5;">--</p>
+        </div>
+        <div class="card">
+          <h3>🎯 What to Improve</h3>
+          <p id="pImprove" style="margin-top:10px; line-height:1.5;">--</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="parent-section-heading"><div><h3>📚 Homework tracker</h3><p>Assigned work and latest completion status</p></div><span class="parent-status-pill" id="pHomeworkProgressLabel">Not loaded</span></div>
+        <div class="parent-progress-track" aria-hidden="true"><div class="parent-progress-fill" id="pHomeworkProgressBar"></div></div>
+        <div id="pHomeworkList" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('auraway_theme', next);
+    });
+
+    async function loadParentView() {
+      const input = document.getElementById('parentCodeInput');
+      const code = input.value.trim().toUpperCase();
+      if (!code) return alert('Please enter your child’s student code.');
+
+      const button = document.querySelector('.parent-access-form button');
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Checking…';
+
+      try {
+        const { data: report, error } = await supabaseClient.functions.invoke('parent-report', {
+          body: { student_code: code }
+        });
+        if (error || !report?.success || !report?.student) {
+          const message = report?.error || error?.message || 'Unable to verify this code right now.';
+          alert(message);
+          return;
+        }
+
+        const student = report.student;
+        document.getElementById('pStudentName').textContent = student.student_name || 'Student';
+        document.getElementById('pStudentClass').textContent = (student.class_name || 'Class not recorded') + ' • Code: ' + student.student_code;
+        document.getElementById('pStudyHours').textContent = student.study_hours || 'Not recorded';
+        document.getElementById('pTeacherReq').textContent = student.teacher_request || 'No teacher requests.';
+        document.getElementById('pImprove').textContent = student.areas_to_improve || 'Doing well!';
+
+        const rows = Array.isArray(report.attendance) ? report.attendance : [];
+        const presentDays = rows.filter(row => String(row.status).toLowerCase() === 'present').length;
+        const percentage = rows.length ? Math.round((presentDays / rows.length) * 100) : null;
+        document.getElementById('pAttendance').textContent = percentage === null ? 'No records yet' : percentage + '%';
+        document.getElementById('pAttendanceRecordCount').textContent = rows.length + (rows.length === 1 ? ' record' : ' records');
+        const attendanceBox = document.getElementById('pAttendanceHistory');
+        attendanceBox.replaceChildren();
+        if (!rows.length) {
+          attendanceBox.textContent = 'No attendance records have been added by the teacher yet.';
+        } else {
+          rows.forEach(row => {
+            const line = document.createElement('div');
+            line.className = 'hw-row';
+            const date = document.createElement('strong');
+            date.textContent = row.attendance_date;
+            const status = document.createElement('span');
+            status.textContent = row.status;
+            status.style.fontWeight = '700';
+            status.style.color = String(row.status).toLowerCase() === 'present' ? '#10b981' : String(row.status).toLowerCase() === 'absent' ? '#ef4444' : '#f59e0b';
+            line.append(date, status);
+            attendanceBox.appendChild(line);
+          });
+        }
+
+        const assignments = Array.isArray(report.assignments) ? report.assignments : [];
+        const updates = Array.isArray(report.updates) ? report.updates : [];
+        const latestStatus = new Map();
+        updates.forEach(update => {
+          if (!latestStatus.has(update.assignment_id)) latestStatus.set(update.assignment_id, update.status);
+        });
+        const completedCount = assignments.filter(item => latestStatus.get(item.id) === 'Completed').length;
+        const pendingCount = assignments.length - completedCount;
+        document.getElementById('pHomeworkCompleted').textContent = completedCount;
+        document.getElementById('pHomeworkPending').textContent = pendingCount;
+        document.getElementById('pHomeworkProgressLabel').textContent = assignments.length ? completedCount + ' / ' + assignments.length + ' completed' : 'No assignments';
+        document.getElementById('pHomeworkProgressBar').style.width = assignments.length ? Math.round(completedCount / assignments.length * 100) + '%' : '0%';
+
+        const hwContainer = document.getElementById('pHomeworkList');
+        hwContainer.replaceChildren();
+        if (!assignments.length) {
+          hwContainer.textContent = 'No homework assigned right now.';
+        } else {
+          assignments.forEach(item => {
+            const isDone = latestStatus.get(item.id) === 'Completed';
+            const div = document.createElement('div');
+            div.className = 'hw-row';
+            const details = document.createElement('div');
+            const title = document.createElement('strong');
+            title.textContent = item.title || 'Untitled assignment';
+            const meta = document.createElement('span');
+            meta.style.cssText = 'display:block;font-size:0.8rem;color:var(--text-secondary);margin-top:3px;';
+            meta.textContent = [item.subject, item.due_date ? 'Due: ' + item.due_date : ''].filter(Boolean).join(' • ');
+            details.append(title, meta);
+            const status = document.createElement('span');
+            status.style.cssText = 'font-size:0.8rem;font-weight:700;white-space:nowrap;';
+            status.style.color = isDone ? '#10b981' : '#f59e0b';
+            status.textContent = isDone ? '✓ Completed' : 'Pending';
+            div.append(details, status);
+            hwContainer.appendChild(div);
+          });
+        }
+
+        document.getElementById('parentReportCard').style.display = 'block';
+      } catch (error) {
+        console.error('Parent report lookup failed:', error);
+        alert('Could not connect to the Parent Portal. Please try again.');
+      } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Rule-Based Timetable Generator</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .gen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .subject-chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .subject-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .day-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .day-card h4 {
+      color: var(--accent-primary);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .slot-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      border-left: 4px solid var(--accent-primary);
+      background: var(--bg-card);
+    }
+    .slot-break {
+      border-left-color: #10b981;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button><div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks"><li><a href="index.html">📊 Dashboard</a></li><li><a href="planner.html">📅 Study Planner</a></li><li><a href="timetable.html">🗓️ Timetable</a></li><li><a href="exam.html">🎯 Exams</a></li><li><a href="marks.html">📈 Marks Manager</a></li><li><a href="attendance.html">📋 Attendance</a></li><li><a href="flashcards.html">🗂️ Flashcards</a></li><li><a href="classroom.html">🎓 Classroom</a></li><li><a href="focus.html">⏱️ Focus Centre</a></li><li><a href="notes.html">📝 Digital Notes</a></li><li><a href="wellness.html">🌱 Wellness</a></li><li><a href="progress.html">🏆 Progress</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="settings.html">⚙️ Settings</a></li></ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Smart Rule-Based Timetable 🗓️</h1>
+          <p>Automatically distribute study blocks and breaks by subject priority (100% deterministic logic).</p>
+        </div>
+      </div>
+
+      <!-- Step 1: Configure Subjects & Priorities -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>1. Configure Subjects & Priority Rules</h3>
+        <form id="addSubjectForm" class="gen-grid">
+          <input type="text" id="subjName" class="input-field" placeholder="Subject (e.g. Mathematics)" required>
+          <select id="subjPriority" class="input-field">
+            <option value="3">High Priority (3x Weight)</option>
+            <option value="2" selected>Medium Priority (2x Weight)</option>
+            <option value="1">Low Priority (1x Weight)</option>
+          </select>
+          <button type="submit" class="btn">Add Subject</button>
+        </form>
+        <div id="subjectChips" class="subject-chip-list">
+          <!-- Subject chips rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Step 2: Daily Schedule Parameters -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>2. Study Window & Break Rules</h3>
+        <div class="gen-grid">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">Start Time (Daily)</label>
+            <input type="time" id="startTimeInput" class="input-field" value="17:00">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">Daily Study Sessions</label>
+            <select id="sessionsPerDay" class="input-field">
+              <option value="2">2 Sessions / Day</option>
+              <option value="3" selected>3 Sessions / Day</option>
+              <option value="4">4 Sessions / Day</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">Session Length</label>
+            <select id="sessionDuration" class="input-field">
+              <option value="30">30 Minutes</option>
+              <option value="45" selected>45 Minutes</option>
+              <option value="60">60 Minutes</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">Break Between Sessions</label>
+            <select id="breakDuration" class="input-field">
+              <option value="5">5 Minutes</option>
+              <option value="10" selected>10 Minutes</option>
+              <option value="15">15 Minutes</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn" onclick="generateRuleTimetable()">⚡ Generate Weekly Timetable</button>
+          <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="clearTimetable()">Clear Schedule</button>
+        </div>
+      </div>
+
+      <!-- Generated Weekly Timetable -->
+      <div class="card">
+        <h3>Weekly Study Schedule (Monday – Sunday)</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem;">Saved locally for offline access.</p>
+        <div id="weekGrid" class="week-grid">
+          <!-- Days rendered via JS -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const themeToggle=document.getElementById('themeToggle'),html=document.documentElement;
+    html.setAttribute('data-theme',localStorage.getItem('auraway_theme')||'dark');
+    themeToggle.addEventListener('click',()=>{const next=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',next);localStorage.setItem('auraway_theme',next)});
+    let subjects=[],weeklySchedule={};
+    try{subjects=JSON.parse(localStorage.getItem('auraway_tt_subjects'))||[]}catch(e){}
+    try{weeklySchedule=JSON.parse(localStorage.getItem('auraway_tt_schedule'))||{}}catch(e){}
+    if(!subjects.length)subjects=[{id:1,name:'Mathematics',weight:3},{id:2,name:'Physics',weight:2},{id:3,name:'Social Science',weight:2},{id:4,name:'English',weight:1}];
+    function renderSubjects(){const root=document.getElementById('subjectChips');root.replaceChildren();subjects.forEach(s=>{const chip=document.createElement('div');chip.className='subject-chip';const label=document.createElement('span');label.textContent=s.name+' ('+(s.weight===3?'High':s.weight===2?'Med':'Low')+')';const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.addEventListener('click',()=>{subjects=subjects.filter(x=>x.id!==s.id);renderSubjects()});chip.append(label,remove);root.append(chip)});localStorage.setItem('auraway_tt_subjects',JSON.stringify(subjects))}
+    document.getElementById('addSubjectForm').addEventListener('submit',e=>{e.preventDefault();const name=document.getElementById('subjName').value.trim(),weight=Number(document.getElementById('subjPriority').value);if(!name)return;subjects.push({id:Date.now(),name,weight:[1,2,3].includes(weight)?weight:2});renderSubjects();e.target.reset()});
+    function formatMinutes(total){const h=Math.floor(total/60)%24,m=total%60;return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM')}
+    window.generateRuleTimetable=function(){if(!subjects.length){alert('Please add at least one subject first.');return}const start=document.getElementById('startTimeInput').value||'17:00',[h,m]=start.split(':').map(Number),sessions=Number(document.getElementById('sessionsPerDay').value),study=Number(document.getElementById('sessionDuration').value),rest=Number(document.getElementById('breakDuration').value),pool=subjects.flatMap(s=>Array(Math.max(1,Math.min(3,s.weight))).fill(s.name)),days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],schedule={};let n=0;days.forEach(day=>{let cursor=h*60+m;const slots=[],count=day==='Sunday'?Math.min(2,sessions):sessions;for(let i=0;i<count;i++){const name=pool[n++%pool.length],end=cursor+study;slots.push({type:'study',time:formatMinutes(cursor)+' - '+formatMinutes(end),title:day==='Sunday'?name+' (Weekly Revision)':name});cursor=end;if(i<count-1){const stop=cursor+rest;slots.push({type:'break',time:formatMinutes(cursor)+' - '+formatMinutes(stop),title:'Rest & Hydration Break ('+rest+'m)'});cursor=stop}}schedule[day]=slots});weeklySchedule=schedule;localStorage.setItem('auraway_tt_schedule',JSON.stringify(schedule));renderTimetable()};
+    window.clearTimetable=function(){weeklySchedule={};localStorage.removeItem('auraway_tt_schedule');renderTimetable()};
+    function renderTimetable(){const grid=document.getElementById('weekGrid');grid.replaceChildren();const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];if(!Object.keys(weeklySchedule).length){const p=document.createElement('p');p.textContent='No timetable generated yet. Configure your subjects above and tap "Generate Weekly Timetable".';grid.append(p);return}days.forEach(day=>{const card=document.createElement('div');card.className='day-card';const heading=document.createElement('h4');heading.textContent=day;card.append(heading);(weeklySchedule[day]||[]).forEach(slot=>{const item=document.createElement('div');item.className='slot-item '+(slot.type==='break'?'slot-break':'');const time=document.createElement('strong');time.textContent=slot.time;const title=document.createElement('div');title.textContent=slot.title;item.append(time,title);card.append(item)});grid.append(card)})}
+    renderSubjects();renderTimetable();
+  </script>  <script src="navigation.js" defer></script>
+</body></html>

@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Teacher Portal</title>
+  <link rel="stylesheet" href="style.css?v=20261114-nav2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    body { background: var(--bg-primary); color: var(--text-primary); }
+    .standalone-wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
+    .portal-form { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .input-field { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 12px; border-radius: var(--radius); font-size: 0.9rem; width: 100%; }
+    .student-row { display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 8px; background: var(--bg-primary); gap: 10px; flex-wrap: wrap; }
+    .code-badge { background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
+    .stat-box { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 14px; border-radius: var(--radius); }
+
+    .teacher-command-center{margin:0 0 22px;padding:clamp(18px,2.5vw,26px);border:1px solid var(--border-color);border-radius:20px;background:linear-gradient(130deg,rgba(99,102,241,.14),rgba(56,189,248,.07)),var(--bg-card);box-shadow:var(--shadow)}
+    .teacher-command-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+    .teacher-command-heading h2{margin:4px 0;font-size:clamp(1.2rem,2.5vw,1.55rem);letter-spacing:-.03em}
+    .teacher-command-heading p{margin:0;color:var(--text-secondary);font-size:.88rem}
+    .teacher-eyebrow{font-size:.68rem;font-weight:800;letter-spacing:.14em;color:var(--accent-hover)}
+    .teacher-live-label{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid var(--border-color);border-radius:99px;color:var(--text-secondary);font-size:.75rem}
+    .teacher-live-label span{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,.12)}
+    .teacher-overview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+    .teacher-overview-card{min-width:0;padding:14px;border:1px solid var(--border-color);border-radius:14px;background:var(--bg-card)}
+    .teacher-overview-card span,.teacher-overview-card small{display:block;color:var(--text-secondary);font-size:.78rem}
+    .teacher-overview-card strong{display:block;margin:5px 0;font-size:1.75rem;line-height:1.2;font-weight:800}
+    .teacher-quick-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+    .teacher-secondary-action{background:var(--bg-secondary);color:var(--text-primary);box-shadow:none}
+    .teacher-roster-tools{display:grid;grid-template-columns:minmax(180px,1fr) minmax(150px,.55fr) auto;gap:9px;margin:14px 0}
+    .teacher-roster-tools .input-field{min-width:0}
+    .teacher-roster-count{align-self:center;color:var(--text-secondary);font-size:.78rem;white-space:nowrap}
+    #studentsRosterList .student-row[hidden]{display:none!important}
+    @media(max-width:600px){.teacher-overview-grid{grid-template-columns:1fr 1fr}.teacher-overview-card:last-child{grid-column:1/-1}.teacher-roster-tools{grid-template-columns:1fr}.teacher-roster-count{white-space:normal}}
+
+  </style>
+</head>
+<body class="pulse-teacher-portal">
+  <section id="teacherLoginPanel" class="standalone-wrap" style="max-width:440px;">
+    <div class="card">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <svg viewBox="0 0 500 500" width="40" height="40" aria-hidden="true">
+          <path d="M 250 50 C 330 50, 410 80, 420 120 C 430 240, 370 360, 250 430 C 130 360, 70 240, 80 120 C 90 80, 170 50, 250 50 Z" fill="none" stroke="#0284c7" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 50 240 L 170 240 L 195 200 L 220 280 L 245 140 L 270 300 L 295 220 L 320 240 L 450 240" fill="none" stroke="#0284c7" stroke-width="14" stroke-linecap="round" />
+          <polygon points="410,40 420,60 442,63 426,78 430,100 410,88 390,100 394,78 378,63 400,60" fill="#f59e0b" />
+        </svg>
+        <h1 style="margin:0;">PULSE-T — Teacher Sign In 👩‍🏫</h1>
+      </div>
+      <p style="color:var(--text-secondary);margin:8px 0 16px;">Enter your teacher access code and name to continue.</p>
+      <div class="portal-form" id="teacherLoginForm">
+        <input id="teacherDisplayName" class="input-field" type="text" placeholder="Your teacher name" autocomplete="name" required>
+        <input id="teacherAccessCode" class="input-field" type="password" placeholder="Teacher access code" autocomplete="current-password" required>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="btn" id="teacherLoginButton" type="button">Sign in</button>
+          <button class="btn" id="teacherSignupButton" type="button" style="background:#0f766e;">Sign up</button>
+        </div>
+        <p id="teacherLoginError" role="alert" style="color:#ef4444;"></p>
+      </div>
+    </div>
+  </section>
+  <div class="app-container" id="teacherAppContainer" style="display:none;">
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+    <div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <sidebar id="aurawaySidebar" aria-label="Teacher navigation">
+      <div class="logo-area">
+        <svg class="pulse-app-logo" viewBox="0 0 500 500" width="32" height="32" aria-hidden="true">
+          <path d="M 250 50 C 330 50, 410 80, 420 120 C 430 240, 370 360, 250 430 C 130 360, 70 240, 80 120 C 90 80, 170 50, 250 50 Z" fill="none" stroke="#0284c7" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 50 240 L 170 240 L 195 200 L 220 280 L 245 140 L 270 300 L 295 220 L 320 240 L 450 240" fill="none" stroke="#0284c7" stroke-width="14" stroke-linecap="round" />
+          <polygon points="410,40 420,60 442,63 426,78 430,100 410,88 390,100 394,78 378,63 400,60" fill="#f59e0b" />
+        </svg>
+        <span class="logo-text">PULSE-T</span>
+      </div>
+      <nav aria-label="Teacher portal navigation">
+        <ul class="nav-links">
+          <li><a href="#teacherCommandCenter">🏠 <span>Overview</span></a></li>
+          <li><a href="#teacherStudentsSection">👥 <span>Students</span></a></li>
+          <li><a href="#teacherAttendanceManager">📋 <span>Attendance</span></a></li>
+          <li><a href="#teacherMarksSection">📝 <span>Marks</span></a></li>
+          <li><a href="#teacherAssignmentsSection">📚 <span>Assignments</span></a></li>
+          <li><a href="#teacherActivitySection">🔔 <span>Activity</span></a></li>
+          <li><a href="#teacherAnalyticsSection">📊 <span>Analytics</span></a></li>
+        </ul>
+      </nav>
+      <button class="btn" id="teacherSignOut" style="margin-top:18px;background:#64748b;">Sign out</button>
+    </sidebar>
+    <main class="standalone-wrap" id="teacherPortalContent" style="display:none;">
+    <div class="header-bar" id="teacherTop" style="margin-bottom: 24px;">
+      <div class="welcome-title">
+        <h1 id="teacherPortalHeading">PULSE-T — Teacher Portal 👩‍🏫</h1>
+        <p>Generate student login codes, manage profiles, assign homework, and view student activity.</p>
+      </div>
+      <button class="btn" id="themeToggle">Theme</button>
+    </div>
+
+
+
+    <section class="teacher-command-center" id="teacherCommandCenter" aria-label="Teacher command center">
+      <div class="teacher-command-heading">
+        <div><span class="teacher-eyebrow">OVERVIEW</span><h2>Teacher Command Center</h2><p>Your school workspace at a glance.</p></div>
+        <span class="teacher-live-label"><span></span> Portal ready</span>
+      </div>
+      <div class="teacher-overview-grid">
+        <article class="teacher-overview-card"><span>Registered students</span><strong id="teacherOverviewStudents">—</strong><small>Across all classes</small></article>
+        <article class="teacher-overview-card"><span>Classes</span><strong id="teacherOverviewClasses">—</strong><small>Unique class groups</small></article>
+        <article class="teacher-overview-card"><span>Login accounts ready</span><strong id="teacherOverviewAccounts">—</strong><small>Students with linked accounts</small></article>
+      </div>
+      <div class="teacher-quick-actions">
+        <button type="button" class="btn" onclick="document.getElementById('addStudentForm').scrollIntoView({behavior:'smooth',block:'center'})">＋ Add student</button>
+        <button type="button" class="btn teacher-secondary-action" onclick="document.getElementById('teacherAttendanceManager').scrollIntoView({behavior:'smooth'})">Mark attendance</button>
+        <button type="button" class="btn teacher-secondary-action" onclick="document.getElementById('assignHwForm').scrollIntoView({behavior:'smooth',block:'center'})">Publish assignment</button>
+      </div>
+    </section>
+
+    <div id="teacherStudentsSection">
+    <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); margin-bottom: 20px;">
+      <!-- Add Student & Generate Code -->
+      <div class="card">
+        <h3>➕ Add Student & Generate Code</h3>
+        <form id="addStudentForm" class="portal-form">
+          <input type="text" id="newStudentName" class="input-field" placeholder="Student Full Name" required>
+          <input type="text" id="newClassName" class="input-field" placeholder="Class (e.g. Class 8A)" required>
+          <button type="submit" class="btn">Generate Student Code</button>
+        </form>
+        <div id="newCodeBanner" style="display:none; margin-top:12px; padding:12px; border:1px dashed #10b981; border-radius:var(--radius); text-align:center;">
+          <small>Share this login code with the Student & Parent:</small>
+          <h2 id="generatedCodeDisplay" style="color:#10b981; margin:4px 0;"></h2>
+          <p id="generatedLoginPassword" style="margin-top:8px;font-weight:700;word-break:break-all;"></p>
+          <small id="generatedLoginInfo" style="display:block;margin-top:6px;color:var(--text-secondary);">Keep the student password private and share it directly with the student.</small>
+        </div>
+      </div>
+
+      <!-- Edit Selected Student(s) -->
+      <div class="card">
+        <h3>✏️ Edit Selected Student(s)</h3>
+        <p style="font-size:0.8rem; color:var(--text-secondary);">Check one or multiple students below to update individually or in bulk.</p>
+        <form id="editStudentsForm" class="portal-form">
+          <input type="text" id="editNameInput" class="input-field" placeholder="Rename Student (for single selection)">
+          <input type="text" id="editStudyHours" class="input-field" placeholder="Study Tracking (e.g. 12 hrs/week)">
+          <input type="text" id="editAttendance" class="input-field" placeholder="Attendance (e.g. 96%)">
+          <input type="text" id="editTeacherReq" class="input-field" placeholder="Teacher Request (e.g. Submit science record)">
+          <input type="text" id="editImprove" class="input-field" placeholder="What to Improve (e.g. Practice fractions)">
+          <button type="submit" class="btn" style="background:#10b981;">Apply Update to Selected</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Registered Students Roster -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3>📋 Registered Students & Codes</h3>
+        <button class="btn" style="font-size:0.8rem; padding:6px 12px;" onclick="toggleSelectAll()">Select / Deselect All</button>
+      </div>
+      <div class="teacher-roster-tools">
+        <input id="teacherStudentSearch" class="input-field" type="search" placeholder="Search name, class or student code…" aria-label="Search students">
+        <select id="teacherStudentClassFilter" class="input-field" aria-label="Filter students by class"><option value="">All classes</option></select>
+        <span id="teacherRosterCount" class="teacher-roster-count" aria-live="polite">0 students</span>
+      </div>
+      <div id="studentsRosterList">
+        <p style="color:var(--text-secondary);">Loading students...</p>
+      </div>
+    </div>
+
+    </div>
+
+    <!-- Teacher Attendance Manager -->
+    <div class="card" style="margin-bottom:20px;" id="teacherAttendanceManager">
+      <h3>📋 Class Attendance Manager</h3>
+      <p style="color:var(--text-secondary);font-size:.88rem;margin:6px 0 12px;">Choose a class and date, mark each student, then save the register.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;">
+        <select id="attendanceClassSelect" class="input-field"><option value="">Select class</option></select>
+        <input id="attendanceDateInput" class="input-field" type="date">
+        <button type="button" class="btn" id="loadAttendanceClass">Load Class</button>
+      </div>
+      <div id="teacherAttendanceRoster"><p style="color:var(--text-secondary);">Select a class to load its students.</p></div>
+      <button type="button" class="btn" id="saveClassAttendance" style="margin-top:12px;display:none;background:#059669;">Save Class Attendance</button>
+      <p id="attendanceSaveMessage" role="status" style="margin-top:10px;"></p>
+    </div>
+
+
+    <section id="teacherAnalyticsSection" class="card" style="margin:0 0 20px;" aria-labelledby="teacherAnalyticsHeading">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div><h3 id="teacherAnalyticsHeading">📊 Class Analytics</h3><p style="color:var(--text-secondary);font-size:.85rem;margin-top:4px;">Attendance and assignment progress across your registered students.</p></div>
+        <button type="button" class="btn" id="refreshTeacherAnalytics" style="padding:7px 12px;">Refresh</button>
+      </div>
+      <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr));margin-top:14px;">
+        <div class="stat-box"><small style="color:var(--text-secondary);">Attendance rate</small><h2 id="teacherAnalyticsAttendance">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">Assignment completion</small><h2 id="teacherAnalyticsCompletion">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">Students tracked</small><h2 id="teacherAnalyticsStudents">—</h2></div>
+      </div>
+      <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));margin-top:14px;">
+        <div class="stat-box"><h4>Attendance by class</h4><canvas id="teacherAttendanceChart" height="220" style="display:block;width:100%;height:220px;margin-top:10px;" role="img" aria-label="Attendance rate by class"></canvas></div>
+        <div class="stat-box"><h4>Assignment completion by class</h4><canvas id="teacherAssignmentChart" height="220" style="display:block;width:100%;height:220px;margin-top:10px;" role="img" aria-label="Assignment completion rate by class"></canvas></div>
+      </div>
+      <p id="teacherAnalyticsMessage" role="status" style="color:var(--text-secondary);font-size:.85rem;margin-top:12px;">Loading class analytics…</p>
+    </section>
+
+    <section id="teacherMarksSection" class="card" style="margin:0 0 20px;" aria-labelledby="teacherMarksHeading">
+      <h3 id="teacherMarksHeading">📝 Examination Marks Manager</h3>
+      <p style="color:var(--text-secondary);font-size:.85rem;margin:5px 0 14px;">Record official exam results. Each student can see only their own marks in the Student Portal.</p>
+      <form id="teacherMarksForm" class="portal-form">
+        <select id="teacherMarkStudent" class="input-field" required><option value="">Choose student</option></select>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+          <input id="teacherMarkExam" class="input-field" maxlength="120" placeholder="Exam name" required>
+          <input id="teacherMarkSubject" class="input-field" maxlength="80" placeholder="Subject" required>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+          <input id="teacherMarkObtained" class="input-field" type="number" min="0" step="0.01" placeholder="Marks obtained" required>
+          <input id="teacherMarkTotal" class="input-field" type="number" min="0.01" step="0.01" placeholder="Maximum marks" required>
+          <input id="teacherMarkDate" class="input-field" type="date" required>
+        </div>
+        <input id="teacherMarkNote" class="input-field" maxlength="500" placeholder="Optional teacher note">
+        <button type="submit" class="btn">Save examination result</button>
+        <p id="teacherMarksMessage" role="status" style="margin:0;color:var(--text-secondary);"></p>
+      </form>
+      <div style="margin-top:18px;">
+        <h4>Recently recorded results</h4>
+        <div id="teacherMarksRecent" style="margin-top:10px;"><p style="color:var(--text-secondary);">Loading results…</p></div>
+      </div>
+    </section>
+
+    <section id="teacherActivitySection">
+    <!-- Live Student Updates -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3>🔔 Live Student Updates & Completions</h3>
+      <div id="studentActivityFeed" style="margin-top: 12px;">
+        <p style="color:var(--text-secondary);">Loading activity...</p>
+      </div>
+    </div>
+
+    </section>
+
+    <section id="teacherAssignmentsSection" aria-labelledby="teacherAssignmentsHeading">
+    <!-- Teacher assignment publishing workspace -->
+    <div class="card" style="margin-bottom:20px;">
+      <h3 id="teacherAssignmentsHeading">📚 Assignments — Publish to Students</h3>
+      <form id="assignHwForm" class="portal-form">
+        <input type="text" id="hwTitle" class="input-field" placeholder="Homework Title" required>
+        <input type="text" id="hwSubject" class="input-field" placeholder="Subject (e.g. Mathematics)" required>
+        <input type="date" id="hwDue" class="input-field" required>
+        <label for="hwTarget" style="font-size:.85rem;color:var(--text-secondary);">Publish to</label>
+        <select id="hwTarget" class="input-field">
+          <option value="ALL">All students</option>
+        </select>
+        <button type="submit" class="btn">🚀 Publish Assignment</button>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin:0;">Choose all students or a class. Published assignments appear in the students' Classroom and parent portal.</p>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>📈 Assignment Dashboard</h3>
+      <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 12px;">A live summary of published work and student completion.</p>
+      <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;">
+        <div class="stat-box"><small style="color:var(--text-secondary);">📚 Total Assignments</small><h2 id="assignmentStatTotal" style="margin-top:6px;">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">✅ Completed</small><h2 id="assignmentStatCompleted" style="margin-top:6px;color:#10b981;">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">⏳ Pending</small><h2 id="assignmentStatPending" style="margin-top:6px;color:#f59e0b;">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">🎯 Completion Rate</small><h2 id="assignmentStatRate" style="margin-top:6px;">—</h2></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <h3>📊 Assignment Completion Status</h3>
+        <button type="button" class="btn" id="refreshAssignmentStatus" style="padding:6px 12px;">Refresh Status</button>
+      </div>
+      <div id="teacherAssignmentOverview" style="margin-top:12px;">
+        <p style="color:var(--text-secondary);">Loading assignment status...</p>
+      </div>
+    </div>
+    </section>
+    </main>
+  </div>
+
+  <div id="studentPasswordModal" role="dialog" aria-modal="true" aria-labelledby="studentPasswordTitle" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:18px;">
+    <form id="studentPasswordForm" class="card" style="width:min(100%,420px);display:grid;gap:12px;">
+      <h2 id="studentPasswordTitle">Set permanent student password</h2>
+      <p style="color:var(--text-secondary);font-size:.9rem;">Create a password the student can keep using. You can change it later.</p>
+      <label for="studentPasswordInput">New password</label>
+      <input id="studentPasswordInput" class="input-field" type="password" autocomplete="new-password" minlength="10" maxlength="72" required placeholder="At least 10 characters">
+      <label for="studentPasswordConfirm">Confirm password</label>
+      <input id="studentPasswordConfirm" class="input-field" type="password" autocomplete="new-password" minlength="10" maxlength="72" required placeholder="Enter it again">
+      <p id="studentPasswordError" role="alert" style="color:#ef4444;margin:0;"></p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button type="button" class="btn" id="cancelStudentPassword" style="background:#64748b;">Cancel</button>
+        <button type="submit" class="btn" id="saveStudentPassword">Save password</button>
+      </div>
+    </form>
+  </div>
+  <script>
+    const TEACHER_AUTH_FUNCTION_URL = 'https://iazlemocpuhzwtrkyfgw.supabase.co/functions/v1/bright-handler';
+
+    async function showTeacherPortal(session) {
+      if (session?.user?.email?.toLowerCase() !== 'teacher@auraway.app') {
+        await supabaseClient.auth.signOut();
+        document.getElementById('teacherLoginError').textContent = 'This account is not authorized for the teacher portal.';
+        return;
+      }
+      const name = session.user.user_metadata?.display_name || 'Teacher';
+      document.getElementById('teacherLoginPanel').style.display = 'none';
+      document.getElementById('teacherAppContainer').style.display = 'flex';
+      document.getElementById('teacherPortalContent').style.display = 'block';
+      document.getElementById('teacherPortalHeading').textContent = 'PULSE — ' + name;
+      await loadStudentsRoster();
+      await loadTeacherMarks();
+      await loadTeacherAnalytics();
+      loadStudentActivity();
+      loadAssignmentOverview();
+    }
+
+    async function requestTeacherAccess(action, event) {
+      event.preventDefault();
+      const name = document.getElementById('teacherDisplayName').value.trim();
+      const code = document.getElementById('teacherAccessCode').value;
+      const button = event.currentTarget;
+      const errorBox = document.getElementById('teacherLoginError');
+      if (!supabaseClient || !name || !code) {
+        errorBox.textContent = 'Enter your first name and teacher access code.';
+        return;
+      }
+      button.disabled = true;
+      button.textContent = action === 'signup' ? 'Creating account…' : 'Signing in…';
+      errorBox.textContent = '';
+      try {
+        const response = await fetch(TEACHER_AUTH_FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify({ action, first_name: name, access_code: code })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.token_hash) {
+          throw new Error(result.error || 'Teacher access could not be verified.');
+        }
+        const { data, error } = await supabaseClient.auth.verifyOtp({
+          token_hash: result.token_hash,
+          type: 'magiclink'
+        });
+        if (error || !data.session) throw new Error('Could not create a secure teacher session. Please try again.');
+        document.getElementById('teacherAccessCode').value = '';
+        await showTeacherPortal(data.session);
+      } catch (error) {
+        errorBox.textContent = error.message || 'Teacher sign-in failed. Please try again.';
+      } finally {
+        button.disabled = false;
+        button.textContent = action === 'signup' ? 'Create teacher account' : 'Sign in';
+      }
+    }
+
+    document.getElementById('teacherSignupButton').addEventListener('click', (event) => requestTeacherAccess('signup', event));
+    document.getElementById('teacherLoginButton').addEventListener('click', (event) => requestTeacherAccess('signin', event));
+
+    document.getElementById('teacherSignOut').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.reload();
+    });
+
+    (async function initializeTeacherAuth() {
+      if (!supabaseClient) {
+        document.getElementById('teacherLoginError').textContent = 'Supabase is not configured.';
+        return;
+      }
+      const { data } = await supabaseClient.auth.getSession();
+      if (data.session?.user?.email?.toLowerCase() === 'teacher@auraway.app') await showTeacherPortal(data.session);
+      else if (data.session) await supabaseClient.auth.signOut();
+    })();
+
+    const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('auraway_theme', next);
+    });
+
+    let allStudents = [];
+
+    async function loadStudentsRoster() {
+      const container = document.getElementById('studentsRosterList');
+      const { data, error } = await supabaseClient.from('students').select('*').order('created_at', { ascending: false });
+      if (error) {
+        container.innerHTML = `<p style="color:#ef4444;">Error: ${error.message}</p>`;
+        return;
+      }
+      allStudents = data || [];
+      populateAttendanceClasses();
+      populateAssignmentTargets();
+      populateTeacherMarkStudents();
+      updateTeacherOverview();
+      populateTeacherRosterFilter();
+      if (allStudents.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);">No students added yet.</p>';
+        return;
+      }
+      container.innerHTML = '';
+      allStudents.forEach(st => {
+        const div = document.createElement('div');
+        div.className = 'student-row';
+        div.dataset.studentName = String(st.student_name || '').toLowerCase();
+        div.dataset.studentClass = String(st.class_name || '').toLowerCase();
+        div.dataset.studentCode = String(st.student_code || '').toLowerCase();
+        div.innerHTML = `
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="checkbox" class="student-checkbox" value="${st.id}">
+            <div>
+              <strong>${st.student_name}</strong> <span style="color:var(--text-secondary); font-size:0.85rem;">(${st.class_name})</span>
+              <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:2px;">
+                Study: ${st.study_hours || '0 hrs'} &bull; Attendance: ${st.attendance_pct || '100%'}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="code-badge">${st.student_code}</span>
+            <button class="btn" style="padding:4px 10px; font-size:0.75rem;" onclick="quickSelectStudent(${st.id})">Edit</button>
+            <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#0f766e;" onclick="createStudentLogin(${st.id})">${st.auth_user_id ? 'Change Password' : 'Set Password'}</button>
+            <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#ef4444;" onclick="deleteStudent(${st.id}, '${st.student_name.replace(/'/g, "\\'")}')">Delete</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      filterTeacherRoster();
+    }
+
+    function updateTeacherOverview() {
+      const classes = new Set(allStudents.map(student => student.class_name).filter(Boolean));
+      document.getElementById('teacherOverviewStudents').textContent = allStudents.length;
+      document.getElementById('teacherOverviewClasses').textContent = classes.size;
+      document.getElementById('teacherOverviewAccounts').textContent = allStudents.filter(student => Boolean(student.auth_user_id)).length;
+      filterTeacherRoster();
+    }
+
+    function populateTeacherRosterFilter() {
+      const select = document.getElementById('teacherStudentClassFilter');
+      if (!select) return;
+      const current = select.value;
+      const classes = [...new Set(allStudents.map(student => student.class_name).filter(Boolean))].sort();
+      select.innerHTML = '<option value="">All classes</option>';
+      classes.forEach(className => {
+        const option = document.createElement('option');
+        option.value = className.toLowerCase();
+        option.textContent = className;
+        select.appendChild(option);
+      });
+      if (classes.some(name => name.toLowerCase() === current)) select.value = current;
+      filterTeacherRoster();
+    }
+
+    function filterTeacherRoster() {
+      const search = (document.getElementById('teacherStudentSearch')?.value || '').trim().toLowerCase();
+      const className = document.getElementById('teacherStudentClassFilter')?.value || '';
+      const rows = [...document.querySelectorAll('#studentsRosterList .student-row')];
+      let visible = 0;
+      rows.forEach(row => {
+        const matchesSearch = !search || row.dataset.studentName.includes(search) || row.dataset.studentClass.includes(search) || row.dataset.studentCode.includes(search);
+        const matchesClass = !className || row.dataset.studentClass === className;
+        const show = matchesSearch && matchesClass;
+        row.hidden = !show;
+        if (show) visible++;
+      });
+      const count = document.getElementById('teacherRosterCount');
+      if (count) count.textContent = visible + ' of ' + allStudents.length + ' students';
+    }
+
+    document.getElementById('teacherStudentSearch').addEventListener('input', filterTeacherRoster);
+    document.getElementById('teacherStudentClassFilter').addEventListener('change', filterTeacherRoster);
+
+    function populateTeacherMarkStudents() {
+      const select = document.getElementById('teacherMarkStudent');
+      if (!select) return;
+      const selected = select.value;
+      select.innerHTML = '<option value="">Choose student</option>';
+      allStudents.forEach(student => {
+        const option = document.createElement('option');
+        option.value = String(student.id);
+        option.textContent = student.student_name + ' — ' + student.class_name + ' (' + student.student_code + ')';
+        select.appendChild(option);
+      });
+      if (selected && allStudents.some(student => String(student.id) === selected)) select.value = selected;
+    }
+
+    async function loadTeacherMarks() {
+      const container = document.getElementById('teacherMarksRecent');
+      if (!container) return;
+      const { data, error } = await supabaseClient.from('student_marks')
+        .select('id,student_id,exam_name,subject,marks_obtained,marks_total,assessed_on')
+        .order('assessed_on', { ascending: false }).limit(20);
+      if (error) {
+        container.textContent = 'Could not load examination results: ' + error.message;
+        return;
+      }
+      container.innerHTML = '';
+      if (!data?.length) {
+        container.textContent = 'No examination results recorded yet.';
+        return;
+      }
+      data.forEach(mark => {
+        const student = allStudents.find(item => item.id === mark.student_id);
+        const row = document.createElement('div');
+        row.className = 'student-row';
+        const detail = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = (student?.student_name || 'Student') + ' · ' + mark.subject;
+        const sub = document.createElement('div');
+        sub.style.cssText = 'color:var(--text-secondary);font-size:.82rem;margin-top:3px;';
+        sub.textContent = mark.exam_name + ' · ' + mark.assessed_on;
+        detail.append(title, sub);
+        const score = document.createElement('strong');
+        score.textContent = mark.marks_obtained + ' / ' + mark.marks_total + ' (' + Math.round(Number(mark.marks_obtained) / Number(mark.marks_total) * 100) + '%)';
+        row.append(detail, score);
+        container.appendChild(row);
+      });
+    }
+
+    document.getElementById('teacherMarksForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const message = document.getElementById('teacherMarksMessage');
+      const studentId = Number(document.getElementById('teacherMarkStudent').value);
+      const examName = document.getElementById('teacherMarkExam').value.trim();
+      const subject = document.getElementById('teacherMarkSubject').value.trim();
+      const obtained = Number(document.getElementById('teacherMarkObtained').value);
+      const total = Number(document.getElementById('teacherMarkTotal').value);
+      const assessedOn = document.getElementById('teacherMarkDate').value;
+      const note = document.getElementById('teacherMarkNote').value.trim();
+      if (!studentId || !examName || !subject || !assessedOn || !Number.isFinite(obtained) || !Number.isFinite(total) || total <= 0 || obtained < 0 || obtained > total) {
+        message.textContent = 'Check the student, exam details and marks. Obtained marks must not exceed the maximum.';
+        return;
+      }
+      const button = event.submitter;
+      if (button) { button.disabled = true; button.textContent = 'Saving…'; }
+      message.textContent = '';
+      const { error } = await supabaseClient.from('student_marks').insert({
+        student_id: studentId,
+        exam_name: examName,
+        subject,
+        marks_obtained: obtained,
+        marks_total: total,
+        assessed_on: assessedOn,
+        teacher_note: note || null
+      });
+      if (button) { button.disabled = false; button.textContent = 'Save examination result'; }
+      if (error) {
+        message.textContent = 'Could not save marks: ' + error.message;
+        return;
+      }
+      message.textContent = 'Result saved. The student can now see it in their Marks Manager.';
+      event.target.reset();
+      document.getElementById('teacherMarkDate').value = new Date().toISOString().slice(0, 10);
+      await loadTeacherMarks();
+    });
+
+    document.getElementById('teacherMarkDate').value = new Date().toISOString().slice(0, 10);
+
+    async function deleteStudent(id, name) {
+      if (!confirm(`Remove ${name}? Their student code will stop working immediately.`)) return;
+      const { error } = await supabaseClient.from('students').delete().eq('id', id);
+      if (error) return alert('Error: ' + error.message);
+      loadStudentsRoster();
+    }
+
+    function populateAttendanceClasses() {
+      const select = document.getElementById('attendanceClassSelect');
+      const classes = [...new Set(allStudents.map(student => student.class_name).filter(Boolean))].sort();
+      select.innerHTML = '<option value="">Select class</option>' + classes.map(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        return option.outerHTML;
+      }).join('');
+    }
+
+    function populateAssignmentTargets() {
+      const select = document.getElementById('hwTarget');
+      if (!select) return;
+      const currentValue = select.value || 'ALL';
+      const classes = [...new Set(allStudents.map(student => student.class_name).filter(Boolean))].sort();
+      select.innerHTML = '';
+      const allOption = document.createElement('option');
+      allOption.value = 'ALL';
+      allOption.textContent = 'All students';
+      select.appendChild(allOption);
+      classes.forEach(className => {
+        const option = document.createElement('option');
+        option.value = 'CLASS:' + className;
+        option.textContent = className;
+        select.appendChild(option);
+      });
+      if ([...select.options].some(option => option.value === currentValue)) select.value = currentValue;
+    }
+
+    async function loadAttendanceRoster() {
+      const className = document.getElementById('attendanceClassSelect').value;
+      const date = document.getElementById('attendanceDateInput').value;
+      const roster = document.getElementById('teacherAttendanceRoster');
+      const saveButton = document.getElementById('saveClassAttendance');
+      document.getElementById('attendanceSaveMessage').textContent = '';
+      if (!className || !date) {
+        roster.textContent = 'Choose both a class and date.';
+        saveButton.style.display = 'none';
+        return;
+      }
+      const students = allStudents.filter(student => student.class_name === className);
+      if (!students.length) {
+        roster.textContent = 'No students found in this class.';
+        saveButton.style.display = 'none';
+        return;
+      }
+      const codes = students.map(student => student.student_code);
+      const { data: records, error } = await supabaseClient.from('attendance_records')
+        .select('student_code,status').eq('attendance_date', date).in('student_code', codes);
+      if (error) {
+        roster.textContent = 'Could not load attendance. Run the attendance SQL setup in Supabase first. ' + error.message;
+        saveButton.style.display = 'none';
+        return;
+      }
+      const existing = new Map((records || []).map(record => [record.student_code, record.status]));
+      roster.innerHTML = '';
+      students.forEach(student => {
+        const row = document.createElement('div');
+        row.className = 'student-row';
+        const info = document.createElement('div');
+        const name = document.createElement('strong');
+        name.textContent = student.student_name;
+        const code = document.createElement('small');
+        code.textContent = student.student_code;
+        code.style.color = 'var(--text-secondary)';
+        info.append(name, document.createElement('br'), code);
+        const select = document.createElement('select');
+        select.className = 'input-field attendance-status-select';
+        select.dataset.studentCode = student.student_code;
+        select.style.maxWidth = '180px';
+        ['Present','Absent','Leave'].forEach(status => {
+          const option = document.createElement('option');
+          option.value = status;
+          option.textContent = status === 'Present' ? 'Present ✅' : status === 'Absent' ? 'Absent ❌' : 'Leave 📝';
+          select.appendChild(option);
+        });
+        select.value = existing.get(student.student_code) || 'Present';
+        row.append(info, select);
+        roster.appendChild(row);
+      });
+      saveButton.style.display = 'inline-flex';
+    }
+
+    async function saveClassAttendance() {
+      const selects = [...document.querySelectorAll('.attendance-status-select')];
+      const date = document.getElementById('attendanceDateInput').value;
+      const message = document.getElementById('attendanceSaveMessage');
+      if (!selects.length || !date) return;
+      const button = document.getElementById('saveClassAttendance');
+      button.disabled = true;
+      button.textContent = 'Saving…';
+      const records = selects.map(select => ({
+        student_code: select.dataset.studentCode,
+        attendance_date: date,
+        status: select.value
+      }));
+      const { error } = await supabaseClient.from('attendance_records')
+        .upsert(records, { onConflict: 'student_code,attendance_date' });
+      button.disabled = false;
+      button.textContent = 'Save Class Attendance';
+      if (error) {
+        message.style.color = '#ef4444';
+        message.textContent = 'Save failed: ' + error.message + '. Check the Supabase SQL setup and teacher login.';
+        return;
+      }
+      message.style.color = '#10b981';
+      message.textContent = 'Attendance saved for ' + records.length + ' students.';
+      loadStudentsRoster();
+    }
+
+    document.getElementById('attendanceDateInput').valueAsDate = new Date();
+    document.getElementById('loadAttendanceClass').addEventListener('click', loadAttendanceRoster);
+    document.getElementById('saveClassAttendance').addEventListener('click', saveClassAttendance);
+
+    async function loadAssignmentOverview() {
+      const container = document.getElementById('teacherAssignmentOverview');
+      const [{ data: assignments, error: assignmentError }, { data: updates, error: updatesError }] = await Promise.all([
+        supabaseClient.from('assignments').select('*').order('due_date', { ascending: true }),
+        supabaseClient.from('student_updates')
+          .select('assignment_id,student_code,status,updated_at')
+          .in('status', ['Completed', 'Not Completed'])
+          .order('updated_at', { ascending: false })
+      ]);
+
+      if (assignmentError || updatesError) {
+        container.textContent = 'Could not load assignment status. ' + (assignmentError || updatesError).message;
+        return;
+      }
+      const latest = new Map();
+      (updates || []).forEach(update => {
+        const key = update.assignment_id + ':' + update.student_code;
+        if (!latest.has(key)) latest.set(key, update.status);
+      });
+
+      let totalTargets = 0;
+      let completedTargets = 0;
+      (assignments || []).forEach(assignment => {
+        const targets = assignment.target_code === 'ALL'
+          ? allStudents
+          : assignment.target_code.startsWith('CLASS:')
+            ? allStudents.filter(student => student.class_name === assignment.target_code.slice(6))
+            : allStudents.filter(student => student.student_code === assignment.target_code);
+        totalTargets += targets.length;
+        targets.forEach(student => {
+          if (latest.get(assignment.id + ':' + student.student_code) === 'Completed') completedTargets++;
+        });
+      });
+      const pendingTargets = Math.max(0, totalTargets - completedTargets);
+      const completionRate = totalTargets ? Math.round((completedTargets / totalTargets) * 100) : 0;
+      document.getElementById('assignmentStatTotal').textContent = (assignments || []).length;
+      document.getElementById('assignmentStatCompleted').textContent = completedTargets;
+      document.getElementById('assignmentStatPending').textContent = pendingTargets;
+      document.getElementById('assignmentStatRate').textContent = completionRate + '%';
+
+      if (!assignments || assignments.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);">No assignments published yet.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      assignments.forEach(assignment => {
+        const targets = assignment.target_code === 'ALL'
+          ? allStudents
+          : assignment.target_code.startsWith('CLASS:')
+            ? allStudents.filter(student => student.class_name === assignment.target_code.slice(6))
+            : allStudents.filter(student => student.student_code === assignment.target_code);
+        const section = document.createElement('div');
+        section.className = 'student-row';
+        section.style.display = 'block';
+
+        const heading = document.createElement('strong');
+        heading.textContent = assignment.title + ' — ' + assignment.subject;
+        const due = document.createElement('p');
+        due.style.cssText = 'color:var(--text-secondary);font-size:.8rem;margin:4px 0 10px;';
+        due.textContent = 'Due: ' + assignment.due_date + (assignment.target_code === 'ALL' ? ' • All students' : ' • ' + assignment.target_code);
+        section.append(heading, due);
+
+        if (!targets.length) {
+          const empty = document.createElement('p');
+          empty.style.color = 'var(--text-secondary)';
+          empty.textContent = 'No matching students are currently registered.';
+          section.appendChild(empty);
+        } else {
+          targets.forEach(student => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--border-color);';
+            const name = document.createElement('span');
+            name.textContent = student.student_name;
+            const status = document.createElement('strong');
+            const current = latest.get(assignment.id + ':' + student.student_code);
+            status.textContent = current === 'Completed' ? '✅ Done' : '⏳ Not Done';
+            status.style.color = current === 'Completed' ? '#10b981' : '#f59e0b';
+            row.append(name, status);
+            section.appendChild(row);
+          });
+        }
+        container.appendChild(section);
+      });
+    }
+
+    document.getElementById('refreshAssignmentStatus').addEventListener('click', loadAssignmentOverview);
+
+
+    function drawTeacherClassChart(canvasId, labels, values, color) {
+      const canvas = document.getElementById(canvasId); if (!canvas) return;
+      const width = canvas.clientWidth || 300, height = 220, dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,width,height);
+      const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#9ca3af';
+      if (!labels.length) { ctx.fillStyle=textColor; ctx.font='13px system-ui'; ctx.textAlign='center'; ctx.fillText('No class data yet',width/2,110); return; }
+      const left=34,right=10,top=12,bottom=42,plotH=height-top-bottom,slot=(width-left-right)/labels.length,bw=Math.min(38,slot*.55);
+      ctx.font='11px system-ui'; ctx.textAlign='right'; ctx.fillStyle=textColor;
+      [0,25,50,75,100].forEach(v=>{const y=top+plotH*(1-v/100);ctx.globalAlpha=.2;ctx.strokeStyle=textColor;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(width-right,y);ctx.stroke();ctx.globalAlpha=1;ctx.fillText(v+'%',left-6,y+4);});
+      values.forEach((v,i)=>{const x=left+i*slot+(slot-bw)/2,bh=plotH*Math.max(0,Math.min(100,v))/100;ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,top+plotH-bh,bw,bh,5);ctx.fill();ctx.fillStyle=textColor;ctx.textAlign='center';ctx.fillText(labels[i].length>10?labels[i].slice(0,9)+'…':labels[i],x+bw/2,height-20);ctx.fillText(Math.round(v)+'%',x+bw/2,Math.max(10,top+plotH-bh-6));});
+    }
+    async function loadTeacherAnalytics() {
+      const message=document.getElementById('teacherAnalyticsMessage');
+      if(!supabaseClient||!allStudents.length){
+        document.getElementById('teacherAnalyticsAttendance').textContent='—';
+        document.getElementById('teacherAnalyticsCompletion').textContent='—';
+        document.getElementById('teacherAnalyticsStudents').textContent=allStudents.length;
+        message.textContent=allStudents.length?'Analytics service unavailable.':'Add students to start seeing class analytics.';
+        drawTeacherClassChart('teacherAttendanceChart',[],[],'#10b981');
+        drawTeacherClassChart('teacherAssignmentChart',[],[],'#6366f1');
+        return;
+      }
+      const codes=allStudents.map(s=>s.student_code);
+      const [attendanceResult,assignmentResult,updatesResult]=await Promise.all([
+        supabaseClient.from('attendance_records').select('student_code,status').in('student_code',codes).limit(2000),
+        supabaseClient.from('assignments').select('id,target_code'),
+        supabaseClient.from('student_updates').select('assignment_id,student_code,status,updated_at').in('status',['Completed','Not Completed']).order('updated_at',{ascending:false}).limit(5000)
+      ]);
+      const error=attendanceResult.error||assignmentResult.error||updatesResult.error;
+      if(error){message.textContent='Could not load analytics. Check teacher data permissions and refresh. '+error.message;return;}
+      const attendance=attendanceResult.data||[], assignments=assignmentResult.data||[], updates=updatesResult.data||[];
+      const latest=new Map();updates.forEach(u=>{const k=u.assignment_id+':'+u.student_code;if(!latest.has(k))latest.set(k,u.status);});
+      let totalPresent=0,totalAttendance=0,totalTargets=0,totalDone=0;
+      const classes=[...new Set(allStudents.map(s=>s.class_name).filter(Boolean))].sort();
+      const attendanceRates=[],completionRates=[];
+      classes.forEach(className=>{
+        const students=allStudents.filter(s=>s.class_name===className),classCodes=new Set(students.map(s=>s.student_code));
+        const records=attendance.filter(r=>classCodes.has(r.student_code));
+        const present=records.filter(r=>String(r.status).toLowerCase()==='present').length;
+        const aRate=records.length?present/records.length*100:0;
+        let targets=0,done=0;
+        assignments.forEach(a=>students.forEach(s=>{
+          if(a.target_code==='ALL'||a.target_code==='CLASS:'+className||a.target_code===s.student_code){
+            targets++;if(latest.get(a.id+':'+s.student_code)==='Completed')done++;
+          }
+        }));
+        attendanceRates.push(aRate);completionRates.push(targets?done/targets*100:0);
+        totalPresent+=present;totalAttendance+=records.length;totalTargets+=targets;totalDone+=done;
+      });
+      document.getElementById('teacherAnalyticsAttendance').textContent=totalAttendance?Math.round(totalPresent/totalAttendance*100)+'%':'—';
+      document.getElementById('teacherAnalyticsCompletion').textContent=totalTargets?Math.round(totalDone/totalTargets*100)+'%':'—';
+      document.getElementById('teacherAnalyticsStudents').textContent=allStudents.length;
+      drawTeacherClassChart('teacherAttendanceChart',classes,attendanceRates,'#10b981');
+      drawTeacherClassChart('teacherAssignmentChart',classes,completionRates,'#6366f1');
+      message.textContent=totalAttendance?'Based on '+totalAttendance+' saved attendance records and '+totalTargets+' assigned student-work items.':'No attendance records yet. Save class attendance to populate the chart.';
+    }
+    document.getElementById('refreshTeacherAnalytics').addEventListener('click',loadTeacherAnalytics);
+    window.addEventListener('resize',()=>{if(document.getElementById('teacherAnalyticsSection'))loadTeacherAnalytics();});
+
+    async function loadStudentActivity() {
+      const feed = document.getElementById('studentActivityFeed');
+      const { data, error } = await supabaseClient.from('student_updates').select('*').order('updated_at', { ascending: false }).limit(20);
+      if (error || !data || data.length === 0) {
+        feed.innerHTML = '<p style="color:var(--text-secondary);">No student updates yet.</p>';
+        return;
+      }
+      feed.innerHTML = '';
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'student-row';
+        const detail = item.status === 'Completed'
+          ? `✅ Marked done: <strong>${item.assignment_title}</strong>`
+          : item.status === 'Not Completed'
+            ? `↩️ Marked not done: <strong>${item.assignment_title}</strong>`
+            : `💬 Note: <em>"${item.student_note || ''}"</em>`;
+        div.innerHTML = `
+          <div>
+            <strong>${item.student_name}</strong> <span class="code-badge">${item.student_code}</span>
+            <div style="font-size:0.85rem; margin-top:4px;">${detail}</div>
+          </div>
+        `;
+        feed.appendChild(div);
+      });
+    }
+
+    function toggleSelectAll() {
+      const boxes = document.querySelectorAll('.student-checkbox');
+      const anyUnchecked = Array.from(boxes).some(b => !b.checked);
+      boxes.forEach(b => b.checked = anyUnchecked);
+    }
+
+    function quickSelectStudent(id) {
+      document.querySelectorAll('.student-checkbox').forEach(b => b.checked = (Number(b.value) === id));
+      const st = allStudents.find(s => s.id === id);
+      if (st) {
+        document.getElementById('editNameInput').value = st.student_name;
+        document.getElementById('editStudyHours').value = st.study_hours || '';
+        document.getElementById('editAttendance').value = st.attendance_pct || '';
+        document.getElementById('editTeacherReq').value = st.teacher_request || '';
+        document.getElementById('editImprove').value = st.areas_to_improve || '';
+        document.getElementById('editStudentsForm').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    document.getElementById('addStudentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const student_name = document.getElementById('newStudentName').value.trim();
+      const class_name = document.getElementById('newClassName').value.trim();
+      const code = `${class_name.replace(/\s+/g, '').toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const { data: createdStudent, error } = await supabaseClient.from('students')
+        .insert([{ student_name, class_name, student_code: code }])
+        .select('id')
+        .single();
+      if (error) return alert('Error: ' + error.message);
+
+      document.getElementById('generatedCodeDisplay').textContent = code;
+      document.getElementById('generatedLoginPassword').textContent = 'Creating secure student login…';
+      document.getElementById('newCodeBanner').style.display = 'block';
+      e.target.reset();
+      await createStudentLogin(createdStudent.id);
+      await loadStudentsRoster();
+    });
+
+    function requestPermanentStudentPassword() {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('studentPasswordModal');
+        const form = document.getElementById('studentPasswordForm');
+        const first = document.getElementById('studentPasswordInput');
+        const second = document.getElementById('studentPasswordConfirm');
+        const error = document.getElementById('studentPasswordError');
+        const cancel = document.getElementById('cancelStudentPassword');
+        const submit = document.getElementById('saveStudentPassword');
+        modal.style.display = 'flex';
+        first.value = '';
+        second.value = '';
+        error.textContent = '';
+        first.focus();
+        const finish = (value) => {
+          modal.style.display = 'none';
+          form.removeEventListener('submit', onSubmit);
+          cancel.removeEventListener('click', onCancel);
+          resolve(value);
+        };
+        const onCancel = () => finish(null);
+        const onSubmit = (event) => {
+          event.preventDefault();
+          if (first.value.length < 10 || first.value.length > 72) {
+            error.textContent = 'Use 10 to 72 characters.';
+            return;
+          }
+          if (first.value !== second.value) {
+            error.textContent = 'The passwords do not match.';
+            second.focus();
+            return;
+          }
+          submit.disabled = true;
+          finish(first.value);
+          submit.disabled = false;
+        };
+        form.addEventListener('submit', onSubmit);
+        cancel.addEventListener('click', onCancel);
+      });
+    }
+
+    async function createStudentLogin(studentId) {
+      const banner = document.getElementById('newCodeBanner');
+      const codeDisplay = document.getElementById('generatedCodeDisplay');
+      const passwordDisplay = document.getElementById('generatedLoginPassword');
+      const info = document.getElementById('generatedLoginInfo');
+
+      const password = await requestPermanentStudentPassword();
+      if (password === null) return;
+
+      banner.style.display = 'block';
+      passwordDisplay.textContent = 'Saving permanent password…';
+      info.textContent = 'Please wait. The password is stored securely by Supabase Auth.';
+      const { data, error } = await supabaseClient.functions.invoke('student-account-manager', {
+        body: { student_id: studentId, password }
+      });
+      if (error || !data?.success) {
+        passwordDisplay.textContent = '';
+        info.textContent = 'Password setup failed: ' + (data?.error || error?.message || 'Unknown error') + '. Try again.';
+        return;
+      }
+      codeDisplay.textContent = data.student_code;
+      passwordDisplay.textContent = 'Permanent password saved successfully.';
+      window.PULSE_LAST_STUDENT_CREDENTIALS = { code: data.student_code, name: data.student_name };
+      info.textContent = 'Give the student their code and the password you just created. The password will stay valid until you change it here.';
+      alert('Permanent student password saved. Share the password securely with the student now; PULSE will not show it again.');
+    }
+
+    document.getElementById('editStudentsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const selectedIds = Array.from(document.querySelectorAll('.student-checkbox:checked')).map(b => Number(b.value));
+      if (selectedIds.length === 0) return alert('Select at least one student checkbox below.');
+
+      const updates = {};
+      const newName = document.getElementById('editNameInput').value.trim();
+      const study = document.getElementById('editStudyHours').value.trim();
+      const att = document.getElementById('editAttendance').value.trim();
+      const req = document.getElementById('editTeacherReq').value.trim();
+      const imp = document.getElementById('editImprove').value.trim();
+
+      if (newName && selectedIds.length === 1) updates.student_name = newName;
+      if (study) updates.study_hours = study;
+      if (att) updates.attendance_pct = att;
+      if (req) updates.teacher_request = req;
+      if (imp) updates.areas_to_improve = imp;
+
+      if (Object.keys(updates).length === 0) return alert('Enter at least one field to update.');
+
+      const { error } = await supabaseClient.from('students').update(updates).in('id', selectedIds);
+      if (error) return alert('Update failed: ' + error.message);
+
+      alert(`✅ Updated ${selectedIds.length} student(s)!`);
+      e.target.reset();
+      loadStudentsRoster();
+    });
+
+    document.getElementById('assignHwForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('hwTitle').value;
+      const subject = document.getElementById('hwSubject').value;
+      const due_date = document.getElementById('hwDue').value;
+      const target_code = document.getElementById('hwTarget').value || 'ALL';
+
+      const { error } = await supabaseClient.from('assignments').insert([{ title, subject, due_date, target_code }]);
+      if (error) return alert('Error: ' + error.message);
+      alert('🎉 Assignment published successfully!');
+      e.target.reset();
+      document.getElementById('hwTarget').value = 'ALL';
+      await loadAssignmentOverview();
+    });
+
+
+    document.querySelectorAll('#aurawaySidebar .nav-links a').forEach(link => {
+      link.addEventListener('click', event => {
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) { event.preventDefault(); target.scrollIntoView({behavior:'smooth',block:'start'}); }
+        if (window.matchMedia('(max-width: 767px)').matches) {
+          document.body.classList.remove('sidebar-open');
+          document.body.classList.add('sidebar-collapsed');
+          document.getElementById('menuToggle').setAttribute('aria-expanded','false');
+          document.getElementById('menuBackdrop').hidden = true;
+        }
+      });
+    });
+  </script>
+  <script src="navigation.js" defer></script>
+</body>
+</html>

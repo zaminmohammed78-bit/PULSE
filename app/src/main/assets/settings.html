@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="student-auth.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Settings & Profile</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button><div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks"><li><a href="index.html">📊 Dashboard</a></li><li><a href="planner.html">📅 Study Planner</a></li><li><a href="timetable.html">🗓️ Timetable</a></li><li><a href="exam.html">🎯 Exams</a></li><li><a href="marks.html">📈 Marks Manager</a></li><li><a href="attendance.html">📋 Attendance</a></li><li><a href="flashcards.html">🗂️ Flashcards</a></li><li><a href="classroom.html">🎓 Classroom</a></li><li><a href="focus.html">⏱️ Focus Centre</a></li><li><a href="notes.html">📝 Digital Notes</a></li><li><a href="wellness.html">🌱 Wellness</a></li><li><a href="progress.html">🏆 Progress</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="settings.html">⚙️ Settings</a></li></ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Settings & Account ⚙️</h1>
+          <p>Customize your profile, preferences, and manage offline data backups.</p>
+        </div>
+      </div>
+
+      <!-- Profile Settings -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>Student Profile</h3>
+        <div class="settings-group" style="margin-top: 16px;">
+          <div class="setting-item">
+            <div>
+              <h4 style="font-size: 0.95rem;">Student Name</h4>
+              <p style="font-size: 0.82rem; color: var(--text-secondary);">Displayed on your dashboard greeting</p>
+            </div>
+            <input type="text" id="profileNameInput" class="input-field" value="Student">
+          </div>
+          <div class="setting-item">
+            <div>
+              <h4 style="font-size: 0.95rem;">Academic Curriculum / Grade</h4>
+              <p style="font-size: 0.82rem; color: var(--text-secondary);">Secondary School / Kerala Syllabus</p>
+            </div>
+            <button class="btn" style="padding: 6px 14px; font-size: 0.82rem;" onclick="saveProfile()">Save Name</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Backup & Restore Centre (Local JSON) -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>💾 Offline Data Backup & Restore</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; margin-bottom: 16px;">
+          Export all your tasks, notes, flashcards, and focus stats into a secure backup file or restore them anytime.
+        </p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn" onclick="exportData()">📥 Export Backup (JSON)</button>
+          <label class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; display: inline-flex; align-items: center;">
+            📤 Restore Backup
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- App Info & Reset -->
+      <div class="card">
+        <h3>About PULSE</h3>
+        <div class="settings-group" style="margin-top: 16px;">
+          <div class="setting-item">
+            <span style="font-size: 0.95rem;">Application Version</span>
+            <span style="font-size: 0.9rem; color: var(--text-secondary);">v1.0.0 (Offline-First Web Edition)</span>
+          </div>
+          <div class="setting-item">
+            <span style="font-size: 0.95rem;">AI Features</span>
+            <span style="font-size: 0.9rem; color: #10b981; font-weight: 600;">Disabled (100% Rule & Logic Based)</span>
+          </div>
+          <div style="margin-top: 10px;">
+            <button class="btn" style="background: #ef4444;" onclick="clearAllData()">⚠️ Reset All Local Data</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Persistent Theme Handling
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const savedTheme = localStorage.getItem('auraway_theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
+    });
+
+    const PROFILE_KEY='auraway_profile_name';
+    const DATA_KEYS=['auraway_tasks','auraway_focus_stats','auraway_assignments','auraway_water','auraway_attendance','auraway_exams','auraway_marks','auraway_notes','auraway_flashcards','auraway_student_code','auraway_habits','auraway_study_days','auraway_dashboard_prefs','auraway_tt_subjects','auraway_tt_schedule',PROFILE_KEY,'auraway_theme'];
+    document.getElementById('profileNameInput').value=localStorage.getItem(PROFILE_KEY)||'Student';
+    window.saveProfile=function(){const name=document.getElementById('profileNameInput').value.trim();if(!name){alert('Please enter a student name.');return}localStorage.setItem(PROFILE_KEY,name);alert('Profile name saved.')};
+    window.exportData=function(){const data={};DATA_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)data[k]=v});const blob=new Blob([JSON.stringify({app:'PULSE',version:1,exportedAt:new Date().toISOString(),data},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='auraway-backup.json';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url)};
+    window.importData=async function(event){const file=event.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text()),payload=parsed.data&&typeof parsed.data==='object'?parsed.data:parsed,entries=Object.entries(payload).filter(([k,v])=>DATA_KEYS.includes(k)&&typeof v==='string');if(!entries.length)throw new Error('No supported PULSE data found.');if(!confirm('Restore this backup? Existing saved values for included sections will be replaced.'))return;entries.forEach(([k,v])=>localStorage.setItem(k,v));alert('Backup restored. Reloading page.');location.reload()}catch(error){alert('Could not restore backup: '+error.message)}finally{event.target.value=''}};
+    window.clearAllData=function(){if(!confirm('Delete all locally saved PULSE data? This cannot be undone unless you have a backup.'))return;DATA_KEYS.forEach(k=>localStorage.removeItem(k));alert('Local data cleared.');location.href='index.html'};
+  </script>  <script src="navigation.js" defer></script>
+</body></html>

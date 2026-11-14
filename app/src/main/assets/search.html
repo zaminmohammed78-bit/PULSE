@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Global Search</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .search-box-wrap {
+      margin-bottom: 24px;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 2px solid var(--accent-primary);
+      color: var(--text-primary);
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      font-size: 1.1rem;
+      outline: none;
+    }
+    .result-section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      margin: 20px 0 10px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .result-item {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .category-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button><div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks"><li><a href="index.html">📊 Dashboard</a></li><li><a href="planner.html">📅 Study Planner</a></li><li><a href="timetable.html">🗓️ Timetable</a></li><li><a href="exam.html">🎯 Exams</a></li><li><a href="marks.html">📈 Marks Manager</a></li><li><a href="attendance.html">📋 Attendance</a></li><li><a href="flashcards.html">🗂️ Flashcards</a></li><li><a href="classroom.html">🎓 Classroom</a></li><li><a href="focus.html">⏱️ Focus Centre</a></li><li><a href="notes.html">📝 Digital Notes</a></li><li><a href="wellness.html">🌱 Wellness</a></li><li><a href="progress.html">🏆 Progress</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="settings.html">⚙️ Settings</a></li></ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Global Search Centre 🔍</h1>
+          <p>Instantly search across your tasks, notes, flashcards, exams, and homework offline.</p>
+        </div>
+      </div>
+
+      <!-- Search Input Bar -->
+      <div class="search-box-wrap">
+        <input type="text" id="globalSearchInput" class="search-input" placeholder="🔍 Type keyword (e.g. Mathematics, Newton, Homework)..." autofocus>
+      </div>
+
+      <!-- Search Results Container -->
+      <div id="searchResultsContainer">
+        <div class="card" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+          Type any keyword above to search your entire PULSE database instantly.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Persistent Theme Handling
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const savedTheme = localStorage.getItem('auraway_theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
+    });
+
+    // Global Search Logic
+    const globalSearchInput = document.getElementById('globalSearchInput');
+    const searchResultsContainer = document.getElementById('searchResultsContainer');
+
+    function performSearch() {
+      const query = globalSearchInput.value.toLowerCase().trim();
+      if (!query) {
+        searchResultsContainer.innerHTML = `
+          <div class="card" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+            Type any keyword above to search your entire PULSE database instantly.
+          </div>
+        `;
+        return;
+      }
+
+      // 1. Gather all local storage collections
+      const tasks = JSON.parse(localStorage.getItem('auraway_tasks')) || [];
+      const notes = JSON.parse(localStorage.getItem('auraway_notes')) || [];
+      const flashcards = JSON.parse(localStorage.getItem('auraway_flashcards')) || [];
+      const exams = JSON.parse(localStorage.getItem('auraway_exams')) || [];
+      const assignments = JSON.parse(localStorage.getItem('auraway_assignments')) || [];
+
+      // 2. Filter matches
+      const matchedTasks = tasks.filter(t => t.title.toLowerCase().includes(query) || t.subject.toLowerCase().includes(query));
+      const matchedNotes = notes.filter(n => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query) || n.subject.toLowerCase().includes(query));
+      const matchedCards = flashcards.filter(c => c.front.toLowerCase().includes(query) || c.back.toLowerCase().includes(query) || c.subject.toLowerCase().includes(query));
+      const matchedExams = exams.filter(e => e.subject.toLowerCase().includes(query));
+      const matchedAssign = assignments.filter(a => a.title.toLowerCase().includes(query) || a.subject.toLowerCase().includes(query));
+
+      const totalMatches = matchedTasks.length + matchedNotes.length + matchedCards.length + matchedExams.length + matchedAssign.length;
+
+      if (totalMatches === 0) {
+        searchResultsContainer.innerHTML = `
+          <div class="card" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+            No results found for "<strong>${query}</strong>". Try another keyword!
+          </div>
+        `;
+        return;
+      }
+
+      let htmlOutput = `<p style="color: var(--text-secondary); margin-bottom: 16px;">Found ${totalMatches} matching items for "<strong>${query}</strong>":</p>`;
+
+      // Render Notes
+      if (matchedNotes.length > 0) {
+        htmlOutput += `<div class="result-section-title">Digital Notes (${matchedNotes.length})</div>`;
+        matchedNotes.forEach(n => {
+          htmlOutput += `
+            <div class="result-item">
+              <div>
+                <span class="category-badge">${n.subject}</span>
+                <h4 style="font-size: 1rem; margin-top: 4px;">${n.title}</h4>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">${n.content.substring(0, 80)}...</p>
+              </div>
+              <a href="notes.html" class="btn" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">View</a>
+            </div>
+          `;
+        });
+      }
+
+      // Render Tasks
+      if (matchedTasks.length > 0) {
+        htmlOutput += `<div class="result-section-title">Study Planner Tasks (${matchedTasks.length})</div>`;
+        matchedTasks.forEach(t => {
+          htmlOutput += `
+            <div class="result-item">
+              <div>
+                <span class="category-badge">${t.subject}</span>
+                <h4 style="font-size: 1rem; margin-top: 4px;">${t.title}</h4>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">Due: ${t.date} &bull; ${t.completed ? 'Completed ✔️' : 'Pending'}</p>
+              </div>
+              <a href="planner.html" class="btn" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">View</a>
+            </div>
+          `;
+        });
+      }
+
+      // Render Flashcards
+      if (matchedCards.length > 0) {
+        htmlOutput += `<div class="result-section-title">Flashcards (${matchedCards.length})</div>`;
+        matchedCards.forEach(c => {
+          htmlOutput += `
+            <div class="result-item">
+              <div>
+                <span class="category-badge">${c.subject}</span>
+                <h4 style="font-size: 1rem; margin-top: 4px;">Q: ${c.front}</h4>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">A: ${c.back}</p>
+              </div>
+              <a href="flashcards.html" class="btn" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">View</a>
+            </div>
+          `;
+        });
+      }
+
+      // Render Assignments
+      if (matchedAssign.length > 0) {
+        htmlOutput += `<div class="result-section-title">Classroom Assignments (${matchedAssign.length})</div>`;
+        matchedAssign.forEach(a => {
+          htmlOutput += `
+            <div class="result-item">
+              <div>
+                <span class="category-badge">${a.subject}</span>
+                <h4 style="font-size: 1rem; margin-top: 4px;">${a.title}</h4>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">Due: ${a.dueDate} &bull; Status: ${a.status}</p>
+              </div>
+              <a href="classroom.html" class="btn" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">View</a>
+            </div>
+          `;
+        });
+      }
+
+      // Render Exams
+      if (matchedExams.length > 0) {
+        htmlOutput += `<div class="result-section-title">Examinations (${matchedExams.length})</div>`;
+        matchedExams.forEach(e => {
+          htmlOutput += `
+            <div class="result-item">
+              <div>
+                <h4 style="font-size: 1rem;">${e.subject}</h4>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">Date: ${e.date} &bull; Chapters: ${e.completedChapters}/${e.totalChapters}</p>
+              </div>
+              <a href="exam.html" class="btn" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">View</a>
+            </div>
+          `;
+        });
+      }
+
+      searchResultsContainer.innerHTML = htmlOutput;
+    }
+
+    globalSearchInput.addEventListener('input', performSearch);
+  </script>
+  <script src="navigation.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Examination Centre & Revision</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .exam-form {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr auto;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    @media (max-width: 768px) {
+      .exam-form {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+    }
+    .exam-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .countdown-pill {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent-primary);
+    }
+    .countdown-urgent {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: #10b981;
+      transition: width 0.3s ease;
+    }
+    /* Distraction-Free Exam Mode */
+    body.exam-focus-mode sidebar {
+      display: none;
+    }
+    body.exam-focus-mode main {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+  <div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="timetable.html">🗓️ Timetable</a></li>
+        <li><a href="exam.html">🎯 Exams</a></li>
+        <li><a href="marks.html">📈 Marks Manager</a></li>
+        <li><a href="attendance.html">📋 Attendance</a></li>
+        <li><a href="flashcards.html">🗂️ Flashcards</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html">🌱 Wellness</a></li>
+        <li><a href="progress.html">🏆 Progress</a></li>
+        <li><a href="search.html">🔍 Search</a></li>
+        <li><a href="settings.html">⚙️ Settings</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Examination Centre 🎯</h1>
+          <p>Track exam countdowns, chapter revision progress, and enter Exam Mode.</p>
+        </div>
+        <button id="examModeBtn" class="btn" style="background: #10b981;" onclick="toggleExamMode()">Enter Exam Mode</button>
+      </div>
+
+      <!-- Add Examination Card -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>Schedule Examination</h3>
+        <form id="examForm" class="exam-form">
+          <input type="text" id="examSubject" class="input-field" placeholder="Subject / Exam Name (e.g. Mathematics Mid-Term)" required>
+          <input type="date" id="examDate" class="input-field" required>
+          <input type="number" id="examChapters" class="input-field" min="1" max="50" placeholder="Total Chapters (e.g. 8)" required>
+          <button type="submit" class="btn">Add Exam</button>
+        </form>
+      </div>
+
+      <!-- Upcoming Exams & Revision Tracker -->
+      <div class="card">
+        <h3>Upcoming Examinations & Revision Progress</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">Use + / - to log completed chapters for each subject.</p>
+        <div id="examsList">
+          <!-- Injected dynamically via JS -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Persistent Theme Handling
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const savedTheme = localStorage.getItem('auraway_theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
+    });
+
+    // Distraction-Free Exam Mode Toggle
+    window.toggleExamMode = function() {
+      document.body.classList.toggle('exam-focus-mode');
+      const btn = document.getElementById('examModeBtn');
+      const isActive = document.body.classList.contains('exam-focus-mode');
+      btn.textContent = isActive ? 'Exit Exam Mode' : 'Enter Exam Mode';
+      btn.style.background = isActive ? '#ef4444' : '#10b981';
+    };
+
+    // Examinations & Revision Logic
+    const examForm = document.getElementById('examForm');
+    const examsList = document.getElementById('examsList');
+
+    let exams = JSON.parse(localStorage.getItem('auraway_exams')) || [
+      { id: 1, subject: 'Social Science Term Exam', date: '2026-11-24', totalChapters: 10, completedChapters: 6 },
+      { id: 2, subject: 'IT Practical & Theory', date: '2026-11-18', totalChapters: 5, completedChapters: 4 }
+    ];
+
+    function saveAndRenderExams() {
+      localStorage.setItem('auraway_exams', JSON.stringify(exams));
+      renderExams();
+    }
+
+    function calculateDaysLeft(dateStr) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const target = new Date(dateStr);
+      target.setHours(0, 0, 0, 0);
+      const diffTime = target - today;
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    function renderExams() {
+      examsList.innerHTML = '';
+      if (exams.length === 0) {
+        examsList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No examinations scheduled yet. Add one above!</p>';
+        return;
+      }
+
+      // Sort by closest exam date
+      const sortedExams = [...exams].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      sortedExams.forEach(exam => {
+        const daysLeft = calculateDaysLeft(exam.date);
+        const pct = Math.min(100, Math.round((exam.completedChapters / exam.totalChapters) * 100));
+        
+        let badgeText = daysLeft > 1 ? `${daysLeft} Days Left` : daysLeft === 1 ? 'Tomorrow!' : daysLeft === 0 ? 'Today!' : 'Completed';
+        let isUrgent = daysLeft >= 0 && daysLeft <= 5;
+
+        const div = document.createElement('div');
+        div.className = 'exam-card';
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <h4 style="font-size: 1.05rem;">${exam.subject}</h4>
+              <p style="font-size: 0.85rem; color: var(--text-secondary);">Exam Date: ${exam.date}</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="countdown-pill ${isUrgent ? 'countdown-urgent' : ''}">${badgeText}</span>
+              <button onclick="deleteExam(${exam.id})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem;" title="Delete">🗑️</button>
+            </div>
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;">
+              <span>Revision Progress: <strong>${exam.completedChapters} / ${exam.totalChapters} Chapters</strong></span>
+              <span style="color: #10b981; font-weight: 700;">${pct}% Ready</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: ${pct}%;"></div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button class="btn" style="padding: 5px 12px; font-size: 0.82rem; background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="updateChapter(${exam.id}, -1)">- Chapter</button>
+            <button class="btn" style="padding: 5px 12px; font-size: 0.82rem;" onclick="updateChapter(${exam.id}, 1)">+ Complete Chapter</button>
+          </div>
+        `;
+        examsList.appendChild(div);
+      });
+    }
+
+    examForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newExam = {
+        id: Date.now(),
+        subject: document.getElementById('examSubject').value,
+        date: document.getElementById('examDate').value,
+        totalChapters: parseInt(document.getElementById('examChapters').value),
+        completedChapters: 0
+      };
+      exams.push(newExam);
+      saveAndRenderExams();
+      examForm.reset();
+    });
+
+    window.updateChapter = function(id, delta) {
+      exams = exams.map(ex => {
+        if (ex.id === id) {
+          const nextCount = Math.max(0, Math.min(ex.totalChapters, ex.completedChapters + delta));
+          return { ...ex, completedChapters: nextCount };
+        }
+        return ex;
+      });
+      saveAndRenderExams();
+    };
+
+    window.deleteExam = function(id) {
+      exams = exams.filter(ex => ex.id !== id);
+      saveAndRenderExams();
+    };
+
+    renderExams();
+  </script>
+  <script src="navigation.js" defer></script>
+</body>
+</html>

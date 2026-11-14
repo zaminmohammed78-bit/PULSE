@@ -40,7 +40,14 @@
 <body class="pulse-teacher-portal">
   <section id="teacherLoginPanel" class="standalone-wrap" style="max-width:440px;">
     <div class="card">
-      <h1>PULSE — Teacher Sign In 👩‍🏫</h1>
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <svg viewBox="0 0 500 500" width="40" height="40" aria-hidden="true">
+          <path d="M 250 50 C 330 50, 410 80, 420 120 C 430 240, 370 360, 250 430 C 130 360, 70 240, 80 120 C 90 80, 170 50, 250 50 Z" fill="none" stroke="#0284c7" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 50 240 L 170 240 L 195 200 L 220 280 L 245 140 L 270 300 L 295 220 L 320 240 L 450 240" fill="none" stroke="#0284c7" stroke-width="14" stroke-linecap="round" />
+          <polygon points="410,40 420,60 442,63 426,78 430,100 410,88 390,100 394,78 378,63 400,60" fill="#f59e0b" />
+        </svg>
+        <h1 style="margin:0;">PULSE-T — Teacher Sign In 👩‍🏫</h1>
+      </div>
       <p style="color:var(--text-secondary);margin:8px 0 16px;">Enter your teacher access code and name to continue.</p>
       <div class="portal-form" id="teacherLoginForm">
         <input id="teacherDisplayName" class="input-field" type="text" placeholder="Your teacher name" autocomplete="name" required>
@@ -57,7 +64,14 @@
     <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
     <div class="menu-backdrop" id="menuBackdrop" hidden></div>
     <sidebar id="aurawaySidebar" aria-label="Teacher navigation">
-      <div class="logo-area">PULSE</div>
+      <div class="logo-area">
+        <svg class="pulse-app-logo" viewBox="0 0 500 500" width="32" height="32" aria-hidden="true">
+          <path d="M 250 50 C 330 50, 410 80, 420 120 C 430 240, 370 360, 250 430 C 130 360, 70 240, 80 120 C 90 80, 170 50, 250 50 Z" fill="none" stroke="#0284c7" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 50 240 L 170 240 L 195 200 L 220 280 L 245 140 L 270 300 L 295 220 L 320 240 L 450 240" fill="none" stroke="#0284c7" stroke-width="14" stroke-linecap="round" />
+          <polygon points="410,40 420,60 442,63 426,78 430,100 410,88 390,100 394,78 378,63 400,60" fill="#f59e0b" />
+        </svg>
+        <span class="logo-text">PULSE-T</span>
+      </div>
       <nav aria-label="Teacher portal navigation">
         <ul class="nav-links">
           <li><a href="#teacherCommandCenter">🏠 <span>Overview</span></a></li>
@@ -74,7 +88,7 @@
     <main class="standalone-wrap" id="teacherPortalContent" style="display:none;">
     <div class="header-bar" id="teacherTop" style="margin-bottom: 24px;">
       <div class="welcome-title">
-        <h1 id="teacherPortalHeading">PULSE — Teacher Portal 👩‍🏫</h1>
+        <h1 id="teacherPortalHeading">PULSE-T — Teacher Portal 👩‍🏫</h1>
         <p>Generate student login codes, manage profiles, assign homework, and view student activity.</p>
       </div>
       <button class="btn" id="themeToggle">Theme</button>

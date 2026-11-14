@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PULSE</string>
+    <string name="student_portal_name">PULSE</string>
+    <string name="parent_portal_name">PULSE-P</string>
+    <string name="teacher_portal_name">PULSE-T</string>
+    <string name="app_subtitle">Student Management for Schools</string>
+    <string name="student_portal_desc">Student Productivity &amp; Academic Dashboard</string>
+    <string name="parent_portal_desc">Child Study Progress, Attendance &amp; Feedback</string>
+    <string name="teacher_portal_desc">Roster Management, Attendance &amp; Homework</string>
+    <string name="select_portal_title">Select Portal</string>
+    <string name="open_student_portal">Open PULSE (Student)</string>
+    <string name="open_parent_portal">Open PULSE-P (Parent)</string>
+    <string name="open_teacher_portal">Open PULSE-T (Teacher)</string>
+    <string name="switch_portal">Switch Portal</string>
+    <string name="refresh">Refresh</string>
+</resources>

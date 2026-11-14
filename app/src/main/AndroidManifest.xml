@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="${appName}"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PULSE">
+
+        <!-- Portal Selector / Main Launcher -->
+        <activity
+            android:name=".PortalSelectionActivity"
+            android:exported="true"
+            android:label="${appName}">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".StudentPortalActivity"
+            android:exported="true"
+            android:label="PULSE" />
+
+        <activity
+            android:name=".ParentPortalActivity"
+            android:exported="true"
+            android:label="PULSE-P" />
+
+        <activity
+            android:name=".TeacherPortalActivity"
+            android:exported="true"
+            android:label="PULSE-T" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+
+    </application>
+
+</manifest>

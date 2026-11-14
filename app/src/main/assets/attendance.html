@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Attendance Management</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="student-auth.js"></script>
+  <style>
+    .att-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    @media (max-width: 768px) {
+      .att-controls {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .att-history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+    }
+    .status-pill {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .pill-present { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .pill-absent { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .pill-leave { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+  <div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="timetable.html">🗓️ Timetable</a></li>
+        <li><a href="exam.html">🎯 Exams</a></li>
+        <li><a href="marks.html">📈 Marks Manager</a></li>
+        <li><a href="attendance.html">📋 Attendance</a></li>
+        <li><a href="flashcards.html">🗂️ Flashcards</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html">🌱 Wellness</a></li>
+        <li><a href="progress.html">🏆 Progress</a></li>
+        <li><a href="search.html">🔍 Search</a></li>
+        <li><a href="settings.html">⚙️ Settings</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Attendance Tracker 📋</h1>
+          <p>Log daily school attendance, authorized leaves, and monitor your attendance percentage.</p>
+        </div>
+      </div>
+
+      <!-- Summary Stats Grid -->
+      <div class="grid-cards" style="margin-bottom: 24px;">
+        <div class="card">
+          <h3>Attendance Percentage</h3>
+          <p id="attPercentage" style="font-size: 2.2rem; font-weight: 800; color: #10b981; margin-top: 8px;">100%</p>
+          <p id="attStatusNote" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Target: 75% minimum</p>
+        </div>
+        <div class="card">
+          <h3>Present Days</h3>
+          <p id="presentCount" style="font-size: 2.2rem; font-weight: 800; color: var(--accent-primary); margin-top: 8px;">0</p>
+          <p id="totalDaysNote" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Out of 0 recorded school days</p>
+        </div>
+        <div class="card">
+          <h3>Absent / Leave</h3>
+          <p id="absentLeaveCount" style="font-size: 2.2rem; font-weight: 800; color: #f59e0b; margin-top: 8px;">0</p>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Days missed or on leave</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:24px;">
+        <h3>Teacher-managed attendance</h3>
+        <p style="color:var(--text-secondary);margin-top:8px;">Your teacher records attendance for your class. This page shows the records saved to your student account.</p>
+      </div>
+
+      <!-- Attendance Log History -->
+      <div class="card">
+        <h3>Attendance History</h3>
+        <div id="attHistoryList" style="margin-top: 14px;">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
+    themeToggle.addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('auraway_theme', next);
+    });
+
+    const attHistoryList = document.getElementById('attHistoryList');
+
+    function renderAttendance(rows) {
+      attHistoryList.innerHTML = '';
+      const total = rows.length;
+      const present = rows.filter(row => row.status === 'Present').length;
+      const missed = rows.filter(row => row.status !== 'Present').length;
+      const pct = total ? Math.round((present / total) * 100) : 0;
+      const pctEl = document.getElementById('attPercentage');
+      pctEl.textContent = total ? pct + '%' : '—';
+      pctEl.style.color = pct >= 75 ? '#10b981' : '#ef4444';
+      document.getElementById('attStatusNote').textContent = total ? (pct >= 75 ? 'Great standing (Above 75%)' : 'Warning: Below 75% target') : 'No teacher records yet';
+      document.getElementById('presentCount').textContent = present;
+      document.getElementById('totalDaysNote').textContent = 'Out of ' + total + ' recorded school days';
+      document.getElementById('absentLeaveCount').textContent = missed;
+      if (!total) {
+        attHistoryList.textContent = 'No attendance records have been added by your teacher yet.';
+        return;
+      }
+      rows.forEach(item => {
+        const pillClass = item.status === 'Present' ? 'pill-present' : item.status === 'Absent' ? 'pill-absent' : 'pill-leave';
+        const row = document.createElement('div');
+        row.className = 'att-history-item';
+        const date = document.createElement('strong');
+        date.textContent = item.attendance_date;
+        const status = document.createElement('span');
+        status.className = 'status-pill ' + pillClass;
+        status.textContent = item.status;
+        row.append(date, status);
+        attHistoryList.appendChild(row);
+      });
+    }
+
+    async function loadTeacherAttendance() {
+      const code = window.PULSE_CURRENT_STUDENT?.student_code;
+      if (!code || !supabaseClient) {
+        attHistoryList.textContent = 'Please sign in with your student code to view attendance.';
+        renderAttendance([]);
+        return;
+      }
+      attHistoryList.textContent = 'Loading teacher attendance…';
+      const { data, error } = await supabaseClient.from('attendance_records').select('attendance_date,status').eq('student_code', code).order('attendance_date', { ascending: false }).limit(365);
+      if (error) {
+        attHistoryList.textContent = 'Could not load attendance. Your school administrator may need to run the attendance SQL setup.';
+        console.error('Attendance lookup failed:', error);
+        renderAttendance([]);
+        return;
+      }
+      renderAttendance(data || []);
+    }
+
+    if (window.PULSE_CURRENT_STUDENT) loadTeacherAttendance();
+    else window.addEventListener('pulseStudentReady', loadTeacherAttendance, { once: true });
+  </script>
+  <script src="navigation.js" defer></script>
+</body>
+</html>

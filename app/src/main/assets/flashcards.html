@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Flashcards & Quiz Centre</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .fc-form {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 1.5fr auto;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    @media (max-width: 768px) {
+      .fc-form {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+    }
+    /* Interactive Flip Card Stage */
+    .practice-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 12px;
+    }
+    .flip-card {
+      width: 100%;
+      max-width: 520px;
+      min-height: 220px;
+      background: var(--bg-primary);
+      border: 2px solid var(--accent-primary);
+      border-radius: var(--radius);
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      box-shadow: var(--shadow);
+    }
+    .flip-card.flipped {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.06);
+    }
+    .card-side-label {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+    .card-subject-pill {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent-primary);
+    }
+    .deck-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+  <div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="timetable.html">🗓️ Timetable</a></li>
+        <li><a href="exam.html">🎯 Exams</a></li>
+        <li><a href="marks.html">📈 Marks Manager</a></li>
+        <li><a href="attendance.html">📋 Attendance</a></li>
+        <li><a href="flashcards.html">🗂️ Flashcards</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html">🌱 Wellness</a></li>
+        <li><a href="progress.html">🏆 Progress</a></li>
+        <li><a href="search.html">🔍 Search</a></li>
+        <li><a href="settings.html">⚙️ Settings</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Flashcards & Quiz Centre 🗂️</h1>
+          <p>Create your own revision cards, flip to test recall, and track mastery.</p>
+        </div>
+      </div>
+
+      <!-- Practice & Self-Quiz Stage -->
+      <div class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <h3>Active Study Deck</h3>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <select id="practiceFilter" class="input-field" style="padding: 6px 12px; font-size: 0.85rem;">
+              <option value="All">All Subjects</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Physics">Physics</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Social Science">Social Science</option>
+              <option value="English">English</option>
+            </select>
+            <span id="scoreCounter" style="font-size: 0.85rem; font-weight: 700; color: #10b981;">Mastered: 0 / 0</span>
+          </div>
+        </div>
+
+        <div class="practice-stage">
+          <div id="flashcardBox" class="flip-card" onclick="flipCard()">
+            <span id="cardSideLabel" class="card-side-label">FRONT (QUESTION)</span>
+            <span id="cardSubjectPill" class="card-subject-pill">Subject</span>
+            <p id="cardMainText" style="font-size: 1.25rem; font-weight: 600; line-height: 1.5; margin-top: 12px;">Tap to flip card</p>
+            <span style="position: absolute; bottom: 12px; font-size: 0.78rem; color: var(--text-secondary);">Tap card to flip</span>
+          </div>
+
+          <!-- Practice Controls -->
+          <div style="display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; justify-content: center;">
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="prevCard()">⬅️ Prev</button>
+            <button class="btn" style="background: #f59e0b;" onclick="markCard(false)">Need Review</button>
+            <button class="btn" style="background: #10b981;" onclick="markCard(true)">Got It ✔️</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="nextCard()">Next ➡️</button>
+          </div>
+          <p id="cardIndexText" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 10px;">Card 1 of 1</p>
+        </div>
+      </div>
+
+
+      <div class="card">
+        <h3>Create a Flashcard</h3>
+        <form id="flashcardForm" class="fc-form">
+          <select id="flashcardSubject" class="input-field" required><option>Mathematics</option><option>Physics</option><option>Chemistry</option><option>Social Science</option><option>English</option></select>
+          <input id="flashcardFront" class="input-field" type="text" placeholder="Question / Front" required>
+          <input id="flashcardBack" class="input-field" type="text" placeholder="Answer / Back" required>
+          <button class="btn" type="submit">Add Card</button>
+        </form>
+        <h3 style="margin-top:24px;">Your Flashcards</h3><div id="deckList" style="margin-top:12px;"></div>
+      </div>
+    </main></div>
+  <script>
+    const themeToggle=document.getElementById('themeToggle'), html=document.documentElement;
+    html.setAttribute('data-theme',localStorage.getItem('auraway_theme')||'dark');
+    themeToggle.addEventListener('click',()=>{const next=html.getAttribute('data-theme')==='dark'?'light':'dark';html.setAttribute('data-theme',next);localStorage.setItem('auraway_theme',next);});
+    let cards=[];try{cards=JSON.parse(localStorage.getItem('auraway_flashcards'))||[]}catch(e){cards=[]}
+    let index=0,flipped=false,filtered=[];
+    const box=document.getElementById('flashcardBox'),filter=document.getElementById('practiceFilter'),deck=document.getElementById('deckList');
+    function getFiltered(){return cards.filter(c=>filter.value==='All'||c.subject===filter.value)}
+    function renderCard(){filtered=getFiltered();if(index>=filtered.length)index=Math.max(0,filtered.length-1);const c=filtered[index];document.getElementById('cardMainText').textContent=c?(flipped?c.back:c.front):'No flashcards yet. Add one below.';document.getElementById('cardSideLabel').textContent=c?(flipped?'BACK (ANSWER)':'FRONT (QUESTION)'):'YOUR STUDY DECK';document.getElementById('cardSubjectPill').textContent=c?c.subject:'No cards';document.getElementById('cardIndexText').textContent='Card '+(c?index+1:0)+' of '+filtered.length;document.getElementById('scoreCounter').textContent='Mastered: '+filtered.filter(x=>x.mastered).length+' / '+filtered.length;box.classList.toggle('flipped',!!c&&flipped)}
+    function renderDeck(){deck.replaceChildren();if(!cards.length){deck.textContent='No flashcards saved yet.';return}cards.forEach(c=>{const row=document.createElement('div');row.className='deck-item';const info=document.createElement('div'),q=document.createElement('strong'),meta=document.createElement('p');q.textContent=c.front;meta.textContent=c.subject+' • '+(c.mastered?'Mastered':'Needs review');info.append(q,meta);const del=document.createElement('button');del.className='btn';del.textContent='Delete';del.addEventListener('click',()=>{cards=cards.filter(x=>x.id!==c.id);index=0;save()});row.append(info,del);deck.append(row)})}
+    function save(){localStorage.setItem('auraway_flashcards',JSON.stringify(cards));renderDeck();renderCard()}
+    window.flipCard=()=>{if(filtered.length){flipped=!flipped;renderCard()}};
+    window.nextCard=()=>{if(filtered.length){index=(index+1)%filtered.length;flipped=false;renderCard()}};
+    window.prevCard=()=>{if(filtered.length){index=(index-1+filtered.length)%filtered.length;flipped=false;renderCard()}};
+    window.markCard=mastered=>{const c=filtered[index];if(!c)return;cards=cards.map(x=>x.id===c.id?{...x,mastered}:x);save();if(index<filtered.length-1)index++;flipped=false;renderCard()};
+    document.getElementById('flashcardForm').addEventListener('submit',e=>{e.preventDefault();cards.unshift({id:Date.now(),subject:document.getElementById('flashcardSubject').value,front:document.getElementById('flashcardFront').value.trim(),back:document.getElementById('flashcardBack').value.trim(),mastered:false});e.target.reset();index=0;save()});
+    filter.addEventListener('change',()=>{index=0;flipped=false;renderCard()});renderDeck();renderCard();
+  </script>  <script src="navigation.js" defer></script>
+</body></html>

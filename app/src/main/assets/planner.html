@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="student-auth.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Study Planner</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .planner-form {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1fr 1fr auto;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    @media (max-width: 768px) {
+      .planner-form {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      gap: 12px;
+    }
+    .task-item.completed {
+      opacity: 0.6;
+      text-decoration: line-through;
+    }
+    .priority-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .priority-high { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .priority-medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .priority-low { background: rgba(59, 130, 246, 0.15); color: var(--accent-primary); }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button><div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks">
+<li><a href="index.html">📊 Dashboard</a></li><li><a href="planner.html">📅 Study Planner</a></li><li><a href="timetable.html">🗓️ Timetable</a></li><li><a href="exam.html">🎯 Exams</a></li><li><a href="marks.html">📈 Marks Manager</a></li><li><a href="attendance.html">📋 Attendance</a></li><li><a href="flashcards.html">🗂️ Flashcards</a></li><li><a href="classroom.html">🎓 Classroom</a></li><li><a href="focus.html">⏱️ Focus Centre</a></li><li><a href="notes.html">📝 Digital Notes</a></li><li><a href="wellness.html">🌱 Wellness</a></li><li><a href="progress.html">🏆 Progress</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="settings.html">⚙️ Settings</a></li></ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Study Planner & Tasks 📅</h1>
+          <p>Organize your daily study goals, set priorities, and track task completion offline.</p>
+        </div>
+      </div>
+
+      <!-- Add Task Form Card -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>Create New Study Task</h3>
+        <form id="taskForm" class="planner-form">
+          <input type="text" id="taskTitle" class="input-field" placeholder="Task title (e.g. Chapter 3 Exercises)" required>
+          <select id="taskSubject" class="input-field">
+            <option value="Mathematics">Mathematics</option>
+            <option value="Physics">Physics</option>
+            <option value="Chemistry">Chemistry</option>
+            <option value="Social Science">Social Science</option>
+            <option value="English">English</option>
+            <option value="Information Technology">Information Technology</option>
+          </select>
+          <input type="date" id="taskDate" class="input-field" required>
+          <select id="taskPriority" class="input-field">
+            <option value="High">High Priority</option>
+            <option value="Medium" selected>Medium Priority</option>
+            <option value="Low">Low Priority</option>
+          </select>
+          <button type="submit" class="btn">Add Task</button>
+        </form>
+      </div>
+
+      <!-- Tasks List Card -->
+      <div class="card">
+        <h3>My Study Tasks</h3>
+        <div id="taskList" style="margin-top: 14px;">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Persistent Theme Handling
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const savedTheme = localStorage.getItem('auraway_theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
+    });
+
+    // Default date input to today
+    document.getElementById('taskDate').valueAsDate = new Date();
+
+    // Tasks State
+    let tasks = JSON.parse(localStorage.getItem('auraway_tasks')) || [
+      { id: 1, title: 'Complete Mathematics Problem Set', subject: 'Mathematics', date: new Date().toISOString().split('T')[0], priority: 'High', completed: false },
+      { id: 2, title: 'Read Social Science Chapter 5', subject: 'Social Science', date: new Date().toISOString().split('T')[0], priority: 'Medium', completed: true }
+    ];
+
+    const taskForm = document.getElementById('taskForm');
+    const taskList = document.getElementById('taskList');
+
+    function saveAndRenderTasks() {
+      localStorage.setItem('auraway_tasks', JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = '';
+      if (tasks.length === 0) {
+        taskList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No tasks in your planner yet. Create one above!</p>';
+        return;
+      }
+
+      tasks.forEach(task => {
+        const priorityClass = task.priority === 'High' ? 'priority-high' : task.priority === 'Medium' ? 'priority-medium' : 'priority-low';
+        const div = document.createElement('div');
+        div.className = `task-item ${task.completed ? 'completed' : ''}`;
+        div.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleTask(${task.id})" style="width: 20px; height: 20px; cursor: pointer;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 700;">${task.subject} &bull; Due: ${task.date}</span>
+              <h4 style="font-size: 1rem; margin-top: 2px;">${task.title}</h4>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <select aria-label="Change task priority" onchange="updateTaskPriority(${task.id}, this.value)" style="min-height:32px;padding:4px 7px;font-size:.78rem;"><option value="High" ${task.priority === 'High' ? 'selected' : ''}>High</option><option value="Medium" ${task.priority === 'Medium' ? 'selected' : ''}>Medium</option><option value="Low" ${task.priority === 'Low' ? 'selected' : ''}>Low</option></select>
+            <button onclick="deleteTask(${task.id})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem;" title="Delete">🗑️</button>
+          </div>
+        `;
+        taskList.appendChild(div);
+      });
+    }
+
+    taskForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newTask = {
+        id: Date.now(),
+        title: document.getElementById('taskTitle').value,
+        subject: document.getElementById('taskSubject').value,
+        date: document.getElementById('taskDate').value,
+        priority: document.getElementById('taskPriority').value,
+        completed: false
+      };
+      tasks.unshift(newTask);
+      saveAndRenderTasks();
+      taskForm.reset();
+      document.getElementById('taskDate').valueAsDate = new Date();
+    });
+
+    window.toggleTask = function(id) {
+      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed, completedAt: !t.completed ? new Date().toISOString() : null } : t);
+      if (tasks.some(t => t.id === id && t.completed)) {
+        let days = [];
+        try { days = JSON.parse(localStorage.getItem('auraway_study_days') || '[]'); } catch (e) {}
+        const today = new Date().toISOString().slice(0, 10);
+        if (!days.includes(today)) days.push(today);
+        localStorage.setItem('auraway_study_days', JSON.stringify(days));
+      }
+      saveAndRenderTasks();
+    };
+
+    window.updateTaskPriority = function(id, priority) {
+      if (!['High', 'Medium', 'Low'].includes(priority)) return;
+      tasks = tasks.map(t => t.id === id ? { ...t, priority } : t);
+      saveAndRenderTasks();
+    };
+
+    window.deleteTask = function(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      saveAndRenderTasks();
+    };
+
+    renderTasks();
+  </script>
+  <script src="navigation.js" defer></script>
+</body>
+</html>

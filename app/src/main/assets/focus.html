@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Focus Centre & Pomodoro</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .timer-card {
+      text-align: center;
+      padding: 40px;
+    }
+    .timer-modes {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .mode-btn {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .mode-btn.active {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+    }
+    .timer-display {
+      font-size: 5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: 2px;
+      margin: 20px 0;
+    }
+    .timer-controls {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+  <div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="timetable.html">🗓️ Timetable</a></li>
+        <li><a href="exam.html">🎯 Exams</a></li>
+        <li><a href="marks.html">📈 Marks Manager</a></li>
+        <li><a href="attendance.html">📋 Attendance</a></li>
+        <li><a href="flashcards.html">🗂️ Flashcards</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html">🌱 Wellness</a></li>
+        <li><a href="progress.html">🏆 Progress</a></li>
+        <li><a href="search.html">🔍 Search</a></li>
+        <li><a href="settings.html">⚙️ Settings</a></li>
+      </ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Toggle Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Focus Centre & Pomodoro ⏱️</h1>
+          <p>Eliminate distractions and maintain deep work sessions.</p>
+        </div>
+      </div>
+
+      <!-- Timer Grid & Stats -->
+      <div class="grid-cards" style="grid-template-columns: 2fr 1fr;">
+        <!-- Timer Card -->
+        <div class="card timer-card">
+          <div class="timer-modes">
+            <button class="mode-btn active" onclick="setTimerMode(25, 'focus', this)">Focus (25m)</button>
+            <button class="mode-btn" onclick="setTimerMode(5, 'short', this)">Short Break (5m)</button>
+            <button class="mode-btn" onclick="setTimerMode(15, 'long', this)">Long Break (15m)</button>
+          </div>
+
+          <div id="timerDisplay" class="timer-display">25:00</div>
+
+          <div class="timer-controls">
+            <button id="startBtn" class="btn" onclick="toggleTimer()">Start Session</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="resetTimer()">Reset</button>
+          </div>
+        </div>
+
+        <!-- Focus Statistics Card -->
+        <div class="card">
+          <h3>Today's Focus Stats</h3>
+          <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <p style="color: var(--text-secondary); font-size: 0.85rem;">Total Focus Time</p>
+              <p id="statTotalTime" style="font-size: 1.5rem; font-weight: 700; color: #10b981; margin-top: 4px;">0 mins</p>
+            </div>
+            <div>
+              <p style="color: var(--text-secondary); font-size: 0.85rem;">Completed Sessions</p>
+              <p id="statSessionsCount" style="font-size: 1.5rem; font-weight: 700; color: var(--accent-primary); margin-top: 4px;">0</p>
+            </div>
+            <div>
+              <p style="color: var(--text-secondary); font-size: 0.85rem;">Study Streak</p>
+              <p id="statStudyStreak" style="font-size: 1.5rem; font-weight: 700; color: #f59e0b; margin-top: 4px;">0 Days 🔥</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
+    });
+
+    // Pomodoro Timer Logic
+    let totalSeconds = 25 * 60;
+    let timerInterval = null;
+    let isRunning = false;
+    let currentModeMinutes = 25;
+
+    const timerDisplay = document.getElementById('timerDisplay');
+    const startBtn = document.getElementById('startBtn');
+    const statTotalTime = document.getElementById('statTotalTime');
+    const statSessionsCount = document.getElementById('statSessionsCount');
+
+    // Load stats from local storage
+    let focusStats = JSON.parse(localStorage.getItem('auraway_focus_stats')) || { totalMinutes: 0, sessions: 0 };
+    focusStats.totalMinutes = Number(focusStats.totalMinutes) || 0;
+    focusStats.sessions = Number(focusStats.sessions) || 0;
+    updateStatsDisplay();
+    updateStudyStreak();
+
+    function updateDisplay() {
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    window.setTimerMode = function(mins, mode, trigger) {
+      clearInterval(timerInterval);
+      isRunning = false;
+      startBtn.textContent = 'Start Session';
+      currentModeMinutes = mins;
+      totalSeconds = mins * 60;
+      updateDisplay();
+
+      // Update active button state
+      document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+      if (trigger) trigger.classList.add('active');
+    };
+
+    window.toggleTimer = function() {
+      if (isRunning) {
+        clearInterval(timerInterval);
+        isRunning = false;
+        startBtn.textContent = 'Resume Session';
+      } else {
+        isRunning = true;
+        startBtn.textContent = 'Pause';
+        timerInterval = setInterval(() => {
+          if (totalSeconds > 0) {
+            totalSeconds--;
+            updateDisplay();
+          } else {
+            clearInterval(timerInterval);
+            isRunning = false;
+            startBtn.textContent = 'Start Session';
+            alert('🎉 Session complete! Great job staying focused.');
+            
+            if (currentModeMinutes === 25) {
+              focusStats.totalMinutes += 25;
+              focusStats.sessions += 1;
+              const today = new Date().toISOString().slice(0, 10);
+              focusStats.studyDays = Array.isArray(focusStats.studyDays) ? focusStats.studyDays : [];
+              if (!focusStats.studyDays.includes(today)) focusStats.studyDays.push(today);
+              let studyDays = [];
+              try { studyDays = JSON.parse(localStorage.getItem('auraway_study_days') || '[]'); } catch (e) {}
+              if (!studyDays.includes(today)) studyDays.push(today);
+              localStorage.setItem('auraway_study_days', JSON.stringify(studyDays));
+              localStorage.setItem('auraway_focus_stats', JSON.stringify(focusStats));
+              updateStatsDisplay();
+              updateStudyStreak();
+            }
+          }
+        }, 1000);
+      }
+    };
+
+    window.resetTimer = function() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      startBtn.textContent = 'Start Session';
+      totalSeconds = currentModeMinutes * 60;
+      updateDisplay();
+    };
+
+    function updateStatsDisplay() {
+      statTotalTime.textContent = `${focusStats.totalMinutes} mins`;
+      statSessionsCount.textContent = focusStats.sessions;
+    }
+
+    function updateStudyStreak() {
+      const days = new Set();
+      try { JSON.parse(localStorage.getItem('auraway_study_days') || '[]').forEach(day => days.add(day)); } catch (e) {}
+      (focusStats.studyDays || []).forEach(day => days.add(day));
+      let tasks = [];
+      try { tasks = JSON.parse(localStorage.getItem('auraway_tasks') || '[]'); } catch (e) {}
+      tasks.filter(task => task.completedAt).forEach(task => days.add(task.completedAt.slice(0, 10)));
+      let cursor = new Date(); cursor.setHours(0, 0, 0, 0);
+      if (!days.has(cursor.toISOString().slice(0, 10))) cursor.setDate(cursor.getDate() - 1);
+      let streak = 0;
+      while (days.has(cursor.toISOString().slice(0, 10))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+      document.getElementById('statStudyStreak').textContent = `${streak} ${streak === 1 ? 'Day' : 'Days'} 🔥`;
+    }
+
+    updateDisplay();
+  </script>
+  <script src="navigation.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="student-auth.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Student Productivity Dashboard</title>
+  <link rel="stylesheet" href="style.css?v=20261114-nav2">
+  <style>
+    .pulse-school-snapshot{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 24px}
+    .pulse-school-snapshot .snapshot-item{min-width:0;padding:14px 16px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-primary)}
+    .pulse-school-snapshot .snapshot-label{display:block;color:var(--text-secondary);font-size:.78rem;margin-bottom:6px}
+    .pulse-school-snapshot .snapshot-value{font-size:1.15rem;font-weight:750;overflow-wrap:anywhere}
+    .pulse-school-snapshot .snapshot-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .pulse-school-snapshot .snapshot-link{color:var(--accent-primary);font-weight:650;text-decoration:none}
+    .pulse-school-snapshot .snapshot-link:hover{text-decoration:underline}
+  </style>
+</head>
+<body class="pulse-student-portal">
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+  <div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">
+        <svg class="pulse-app-logo" viewBox="0 0 500 500" width="32" height="32" aria-hidden="true">
+          <defs>
+            <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0284c7" />
+              <stop offset="50%" stop-color="#0d9488" />
+              <stop offset="100%" stop-color="#10b981" />
+            </linearGradient>
+            <linearGradient id="pulseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0284c7" />
+              <stop offset="100%" stop-color="#2563eb" />
+            </linearGradient>
+            <linearGradient id="starGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0d9488" />
+              <stop offset="60%" stop-color="#f59e0b" />
+              <stop offset="100%" stop-color="#fbbf24" />
+            </linearGradient>
+          </defs>
+          <path d="M 250 50 C 330 50, 410 80, 420 120 C 430 240, 370 360, 250 430 C 130 360, 70 240, 80 120 C 90 80, 170 50, 250 50 Z" fill="none" stroke="url(#shieldGrad)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 250 80 C 310 80, 375 105, 385 138 C 390 220, 345 320, 250 380" fill="none" stroke="#10b981" stroke-width="10" stroke-linecap="round" />
+          <g fill="none" stroke="#0d9488" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M 150 170 C 170 160, 190 160, 210 170 L 210 220 C 190 210, 170 210, 150 220 Z" fill="rgba(13, 148, 136, 0.2)" />
+            <path d="M 210 170 C 230 160, 250 160, 270 170 L 270 220 C 250 210, 230 210, 210 220 Z" fill="rgba(13, 148, 136, 0.2)" />
+            <line x1="210" y1="170" x2="210" y2="220" stroke="#0284c7" />
+          </g>
+          <path d="M 50 240 L 170 240 L 195 200 L 220 280 L 245 140 L 270 300 L 295 220 L 320 240 L 450 240" fill="none" stroke="url(#pulseGrad)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="310" cy="270" r="14" fill="#0284c7" />
+          <path d="M 285 340 C 285 305, 335 305, 335 340 Z" fill="#0284c7" />
+          <path d="M 285 315 L 265 290 M 335 315 L 355 290" stroke="#0284c7" stroke-width="8" stroke-linecap="round" />
+          <circle cx="265" cy="295" r="10" fill="#10b981" />
+          <path d="M 248 350 C 248 322, 282 322, 282 350 Z" fill="#10b981" />
+          <circle cx="355" cy="295" r="10" fill="#0d9488" />
+          <path d="M 338 350 C 338 322, 372 322, 372 350 Z" fill="#0d9488" />
+          <path d="M 270 210 L 380 100 L 410 70" fill="none" stroke="url(#starGrad)" stroke-width="14" stroke-linecap="round" />
+          <polygon points="410,40 420,60 442,63 426,78 430,100 410,88 390,100 394,78 378,63 400,60" fill="#f59e0b" />
+        </svg>
+        <span class="logo-text">PULSE</span>
+      </div>
+      <div class="student-nav-tools">
+        <label class="student-nav-search-label" for="studentNavSearch">Find a feature</label>
+        <input id="studentNavSearch" class="student-nav-search" type="search" placeholder="Search menu..." autocomplete="off">
+      </div>
+      <nav class="student-nav-groups" id="studentNavGroups" aria-label="Student portal navigation">
+        <section class="student-nav-section"><h2>OVERVIEW</h2><ul>
+          <li><a href="index.html">📊 <span>Dashboard</span></a></li>
+        </ul></section>
+        <section class="student-nav-section"><h2>PLAN &amp; LEARN</h2><ul>
+          <li><a href="planner.html">📅 <span>Study Planner</span></a></li>
+          <li><a href="timetable.html">🗓️ <span>Timetable</span></a></li>
+          <li><a href="exam.html">🎯 <span>Exams</span></a></li>
+          <li><a href="marks.html">📈 <span>Marks Manager</span></a></li>
+          <li><a href="attendance.html">📋 <span>Attendance</span></a></li>
+          <li><a href="flashcards.html">🗂️ <span>Flashcards</span></a></li>
+          <li><a href="classroom.html">🎓 <span>Classroom</span></a></li>
+          <li><a href="notes.html">📝 <span>Digital Notes</span></a></li>
+        </ul></section>
+        <section class="student-nav-section"><h2>INSIGHTS</h2><ul>
+          <li><a href="analytics.html">📊 <span>Analytics</span></a></li>
+          <li><a href="focus.html">⏱️ <span>Focus Centre</span></a></li>
+          <li><a href="wellness.html">🌱 <span>Wellness</span></a></li>
+          <li><a href="progress.html">🏆 <span>Progress</span></a></li>
+        </ul></section>
+        <section class="student-nav-section"><h2>MORE</h2><ul>
+          <li><a href="search.html">🔍 <span>Search</span></a></li>
+          <li><a href="settings.html">⚙️ <span>Settings</span></a></li>
+        </ul></section>
+      </nav>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1 id="greetingText">Welcome back, Student! 👋</h1>
+          <p id="currentDateText">Loading today's overview...</p>
+        </div>
+        <button class="btn student-theme-toggle" id="themeToggle" type="button" aria-label="Switch between dark and light theme">☀ Switch theme</button>
+      </div>
+
+      <section class="card pulse-school-snapshot" aria-labelledby="schoolSnapshotTitle">
+        <div style="grid-column:1/-1;">
+          <div class="snapshot-heading">
+            <div>
+              <h2 id="schoolSnapshotTitle" style="font-size:1.05rem;">My School Snapshot</h2>
+              <p style="color:var(--text-secondary);font-size:.82rem;margin-top:3px;">Your school profile at a glance</p>
+            </div>
+            <a class="snapshot-link" href="analytics.html">View academic analytics →</a>
+          </div>
+          <div class="pulse-school-snapshot" style="margin:0;">
+            <div class="snapshot-item"><span class="snapshot-label">Class</span><span class="snapshot-value" id="snapshotClass">—</span></div>
+            <div class="snapshot-item"><span class="snapshot-label">Recorded attendance</span><span class="snapshot-value" id="snapshotAttendance">—</span></div>
+            <div class="snapshot-item"><span class="snapshot-label">Study hours on profile</span><span class="snapshot-value" id="snapshotStudyHours">—</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Real Live Stats Grid -->
+      <div class="grid-cards" id="statsSection">
+        <div class="card">
+          <h3>Daily Task Progress</h3>
+          <p id="dashCompletionPct" style="font-size: 2rem; font-weight: 700; color: var(--accent-primary); margin-top: 8px;">0%</p>
+          <p id="dashCompletionSub" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">0 of 0 tasks completed</p>
+        </div>
+        <div class="card">
+          <h3>Focus Time Logged</h3>
+          <p id="dashFocusTime" style="font-size: 2rem; font-weight: 700; color: #10b981; margin-top: 8px;">0 mins</p>
+          <p id="dashFocusSub" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">0 sessions completed</p>
+        </div>
+        <div class="card">
+          <h3>Pending Assignments</h3>
+          <p id="dashPendingAssign" style="font-size: 2rem; font-weight: 700; color: #f59e0b; margin-top: 8px;">0 Due</p>
+          <p id="dashHydrationSub" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Water: 0/8 cups</p>
+        </div>
+        <div class="card">
+          <h3>Study Streak 🔥</h3>
+          <p id="dashStudyStreak" style="font-size: 2rem; font-weight: 700; color: #f59e0b; margin-top: 8px;">0 days</p>
+          <p id="dashStreakSub" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Complete a task or focus session to start.</p>
+        </div>
+      </div>
+
+      <div class="card" id="examCountdownSection" style="margin-bottom: 24px;">
+        <h3>Next Exam 🎯</h3>
+        <p id="dashExamName" style="font-weight: 700; margin-top: 8px;">No upcoming exams scheduled</p>
+        <p id="dashExamCountdown" style="color: var(--text-secondary); font-size: 0.9rem;">Add an exam in the Exams section to see your countdown.</p>
+      </div>
+
+      <!-- Today's Real Tasks & Quick Actions -->
+      <div class="grid-cards" id="tasksQuickSection" style="grid-template-columns: 2fr 1fr;">
+        <div class="card">
+          <h3>Upcoming Study Tasks</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">Synced from your Study Planner</p>
+          <ul id="dashTaskList" style="list-style: none; display: flex; flex-direction: column; gap: 12px;">
+            <!-- Populated live from localStorage -->
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Quick Actions</h3>
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+            <button class="btn" onclick="location.href='focus.html'">⏱️ Start Focus Session</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="location.href='planner.html'">➕ Add Study Task</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="location.href='notes.html'">📝 Create Note</button>
+            <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="location.href='exam.html'">🎯 View Exams</button>
+          </div>
+        </div>
+      </div>
+
+      <details class="card" id="dashboardCustomize" style="margin-top: 4px;">
+        <summary style="cursor: pointer; font-weight: 700;">⚙️ Customize Dashboard</summary>
+        <p style="color: var(--text-secondary); font-size: .85rem; margin: 8px 0 12px;">Choose which sections appear on your dashboard. Your choices are saved on this device.</p>
+        <div style="display: grid; gap: 10px;">
+          <label><input type="checkbox" data-dashboard-section="statsSection" checked> Show overview and study streak</label>
+          <label><input type="checkbox" data-dashboard-section="examCountdownSection" checked> Show next exam countdown</label>
+          <label><input type="checkbox" data-dashboard-section="tasksQuickSection" checked> Show tasks and quick actions</label>
+        </div>
+      </details>
+    </main>
+  </div>
+
+  <script>
+    // Persistent Theme Handling
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const savedTheme = localStorage.getItem('auraway_theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('auraway_theme', nextTheme);
+    });
+
+    // Student navigation: live filter and active-page highlighting
+    const studentNavSearch = document.getElementById('studentNavSearch');
+    const studentNavGroups = document.getElementById('studentNavGroups');
+    if (studentNavSearch && studentNavGroups) {
+      studentNavSearch.addEventListener('input', () => {
+        const query = studentNavSearch.value.trim().toLowerCase();
+        studentNavGroups.querySelectorAll('.student-nav-section').forEach(group => {
+          let matches = 0;
+          group.querySelectorAll('li').forEach(item => {
+            const match = item.textContent.toLowerCase().includes(query);
+            item.hidden = !match;
+            if (match) matches++;
+          });
+          group.hidden = matches === 0;
+        });
+      });
+      const currentPage = location.pathname.split('/').pop() || 'index.html';
+      studentNavGroups.querySelectorAll('a').forEach(link => {
+        if (link.getAttribute('href') === currentPage) {
+          link.classList.add('active');
+          link.closest('details')?.setAttribute('open', '');
+        }
+        link.addEventListener('click', () => {
+          if (window.matchMedia('(max-width: 767px)').matches) {
+            document.body.classList.remove('sidebar-open');
+            document.getElementById('menuToggle')?.setAttribute('aria-expanded', 'false');
+          }
+        });
+      });
+    }
+
+    // Dynamic Date & Greeting
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDateText').textContent = now.toLocaleDateString(undefined, options);
+
+    const hour = now.getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    const studentProfile = JSON.parse(
+      localStorage.getItem('auraway_student_profile') || 'null'
+    );
+    const profileName = studentProfile?.student_name || 'Student';
+    document.getElementById('greetingText').textContent = `${greeting}, ${profileName}! 👋`;
+    // School snapshot uses only the signed-in student's existing profile fields.
+    // Official attendance and examination charts remain in Academic Analytics.
+    document.getElementById('snapshotClass').textContent = studentProfile?.class_name || 'Not recorded';
+    document.getElementById('snapshotAttendance').textContent = studentProfile?.attendance_pct || 'Not recorded';
+    document.getElementById('snapshotStudyHours').textContent = studentProfile?.study_hours || 'Not recorded';
+
+    // Load Real Data from LocalStorage
+    const tasks = JSON.parse(localStorage.getItem('auraway_tasks')) || [];
+    const focusStats = JSON.parse(localStorage.getItem('auraway_focus_stats')) || { totalMinutes: 0, sessions: 0 };
+    const assignments = JSON.parse(localStorage.getItem('auraway_assignments')) || [];
+    const waterCups = parseInt(localStorage.getItem('auraway_water')) || 0;
+
+    // 1. Task Progress
+    const completedTasks = tasks.filter(t => t.completed).length;
+    const pct = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+    document.getElementById('dashCompletionPct').textContent = `${pct}%`;
+    document.getElementById('dashCompletionSub').textContent = `${completedTasks} of ${tasks.length} tasks completed`;
+
+    // 2. Focus Time
+    document.getElementById('dashFocusTime').textContent = `${focusStats.totalMinutes} mins`;
+    document.getElementById('dashFocusSub').textContent = `${focusStats.sessions} sessions completed`;
+
+    // 3. Pending Assignments & Wellness
+    const pendingAssign = assignments.filter(a => a.status !== 'Submitted').length;
+    document.getElementById('dashPendingAssign').textContent = `${pendingAssign} Due`;
+    document.getElementById('dashHydrationSub').textContent = `Hydration: ${waterCups}/8 cups today`;
+
+    // Study streak from real task/focus activity dates
+    function getStudyStreak() {
+      let days = [];
+      try { days = JSON.parse(localStorage.getItem('auraway_study_days') || '[]'); } catch (e) {}
+      const completedDates = tasks.filter(t => t.completedAt).map(t => t.completedAt.slice(0, 10));
+      const uniqueDays = new Set([...days, ...completedDates]);
+      let cursor = new Date(); cursor.setHours(0, 0, 0, 0);
+      if (!uniqueDays.has(cursor.toISOString().slice(0, 10))) cursor.setDate(cursor.getDate() - 1);
+      let streak = 0;
+      while (uniqueDays.has(cursor.toISOString().slice(0, 10))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+      return streak;
+    }
+    const studyStreak = getStudyStreak();
+    document.getElementById('dashStudyStreak').textContent = `${studyStreak} ${studyStreak === 1 ? 'day' : 'days'}`;
+    document.getElementById('dashStreakSub').textContent = studyStreak ? 'Keep it going — study a little each day!' : 'Complete a task or focus session to start.';
+
+    // Next upcoming exam countdown
+    let exams = [];
+    try { exams = JSON.parse(localStorage.getItem('auraway_exams') || '[]'); } catch (e) {}
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const upcomingExam = exams.filter(exam => exam.date && new Date(exam.date + 'T00:00:00') >= todayStart).sort((a, b) => a.date.localeCompare(b.date))[0];
+    if (upcomingExam) {
+      const examDate = new Date(upcomingExam.date + 'T00:00:00');
+      const daysLeft = Math.round((examDate - todayStart) / 86400000);
+      document.getElementById('dashExamName').textContent = upcomingExam.subject;
+      document.getElementById('dashExamCountdown').textContent = daysLeft === 0 ? 'Your exam is today!' : daysLeft === 1 ? 'Tomorrow is exam day.' : `${daysLeft} days remaining · ${upcomingExam.date}`;
+    }
+
+    // Dashboard section visibility preferences
+    const dashboardPrefs = (() => { try { return JSON.parse(localStorage.getItem('auraway_dashboard_prefs') || '{}'); } catch (e) { return {}; } })();
+    document.querySelectorAll('[data-dashboard-section]').forEach(input => {
+      const sectionId = input.dataset.dashboardSection;
+      input.checked = dashboardPrefs[sectionId] !== false;
+      document.getElementById(sectionId).hidden = !input.checked;
+      input.addEventListener('change', () => {
+        dashboardPrefs[sectionId] = input.checked;
+        document.getElementById(sectionId).hidden = !input.checked;
+        localStorage.setItem('auraway_dashboard_prefs', JSON.stringify(dashboardPrefs));
+      });
+    });
+
+    // 4. Upcoming Tasks Preview
+    const dashTaskList = document.getElementById('dashTaskList');
+    const pendingTasks = tasks.filter(t => !t.completed).slice(0, 4);
+
+    if (pendingTasks.length === 0) {
+      dashTaskList.innerHTML = `<li style="color: var(--text-secondary); padding: 12px;">All caught up! No pending tasks in your planner.</li>`;
+    } else {
+      pendingTasks.forEach(task => {
+        const li = document.createElement('li');
+        li.style.cssText = 'padding: 12px; background: rgba(59,130,246,0.06); border-left: 4px solid var(--accent-primary); border-radius: 6px;';
+        li.innerHTML = `<strong>${task.subject}</strong> — ${task.title} <span style="display:block; font-size:0.8rem; color:var(--text-secondary); margin-top:2px;">Due: ${task.date} &bull; ${task.priority} Priority</span>`;
+        dashTaskList.appendChild(li);
+      });
+    }
+  </script>
+  <script src="navigation.js" defer></script>
+</body>
+</html>

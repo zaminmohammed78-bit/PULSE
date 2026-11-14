@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Student Classroom</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="student-auth.js"></script>
+  <style>
+    .classroom-card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .input-field { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 14px; border-radius: var(--radius); font-size: 0.95rem; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+  <div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks">
+        <li><a href="index.html">📊 Dashboard</a></li>
+        <li><a href="planner.html">📅 Study Planner</a></li>
+        <li><a href="timetable.html">🗓️ Timetable</a></li>
+        <li><a href="exam.html">🎯 Exams</a></li>
+        <li><a href="marks.html">📈 Marks Manager</a></li>
+        <li><a href="attendance.html">📋 Attendance</a></li>
+        <li><a href="flashcards.html">🗂️ Flashcards</a></li>
+        <li><a href="classroom.html">🎓 Classroom</a></li>
+        <li><a href="focus.html">⏱️ Focus Centre</a></li>
+        <li><a href="notes.html">📝 Digital Notes</a></li>
+        <li><a href="wellness.html">🌱 Wellness</a></li>
+        <li><a href="progress.html">🏆 Progress</a></li>
+        <li><a href="search.html">🔍 Search</a></li>
+        <li><a href="settings.html">⚙️ Settings</a></li>
+      </ul>
+      <button class="btn" style="margin-top: auto; background: #ef4444;" onclick="studentLogout()">Logout</button>
+    </sidebar>
+
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1 id="studentWelcomeName">Student Classroom 🎓</h1>
+          <p><span id="studentClassDisplay"></span> &bull; Code: <strong id="activeCodeDisplay" style="color: #10b981;"></strong></p>
+        </div>
+        <button class="btn" id="themeToggle">Theme</button>
+      </div>
+
+      <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-bottom: 20px;">
+        <div class="card">
+          <h3>📩 Teacher's Request</h3>
+          <p id="studentTeacherReq" style="margin-top: 8px; color: var(--text-secondary);">--</p>
+        </div>
+        <div class="card">
+          <h3>🎯 Focus Area to Improve</h3>
+          <p id="studentImproveNote" style="margin-top: 8px; color: var(--text-secondary);">--</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 20px;">
+        <h3>✍️ Send Status / Note to Teacher</h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary);">Any update you submit here appears live on your teacher's dashboard.</p>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <input type="text" id="studentUpdateNote" class="input-field" placeholder="e.g. Finished Chapter 4 revision or need help with Q3">
+          <button class="btn" onclick="sendNoteToTeacher()">Send</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📚 Your Cloud Assignments</h3>
+        <div id="assignmentsList" style="margin-top: 14px;">
+          <p style="color: var(--text-secondary);">Loading assignments...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const html = document.documentElement;
+    html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('auraway_theme', next);
+    });
+
+    let currentStudent = null;
+    let currentAssignments = [];
+
+    async function initClassroom() {
+      const student = window.PULSE_CURRENT_STUDENT;
+      const code = student?.student_code;
+      if (!student || !code) return;
+
+      document.getElementById('activeCodeDisplay').textContent = code;
+
+      currentStudent = student;
+
+      if (currentStudent) {
+        document.getElementById('studentWelcomeName').textContent = `Welcome, ${currentStudent.student_name} 👋`;
+        document.getElementById('studentClassDisplay').textContent = currentStudent.class_name;
+        document.getElementById('studentTeacherReq').textContent = currentStudent.teacher_request || 'No requests right now.';
+        document.getElementById('studentImproveNote').textContent = currentStudent.areas_to_improve || 'Keep up the great work!';
+      }
+
+      const [{ data: hwData, error: homeworkError }, { data: doneData, error: statusError }] = await Promise.all([
+        supabaseClient.from('assignments').select('*').order('due_date', { ascending: true }),
+        supabaseClient.from('student_updates').select('assignment_id,status,updated_at').eq('student_code', code).order('updated_at', { ascending: false })
+      ]);
+
+      const container = document.getElementById('assignmentsList');
+      if (homeworkError || statusError) {
+        container.textContent = 'Could not load assignment status. Please refresh or contact your teacher.';
+        return;
+      }
+
+      currentAssignments = (hwData || []).filter(item =>
+        item.target_code === 'ALL' ||
+        item.target_code === code ||
+        (currentStudent?.class_name && item.target_code === 'CLASS:' + currentStudent.class_name)
+      );
+      const latestStatus = new Map();
+      (doneData || []).forEach(update => {
+        if (!latestStatus.has(update.assignment_id)) latestStatus.set(update.assignment_id, update.status);
+      });
+      if (currentAssignments.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary);">No active homework assigned right now!</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      currentAssignments.forEach(item => {
+        const isDone = latestStatus.get(item.id) === 'Completed';
+        const div = document.createElement('div');
+        div.className = 'classroom-card';
+        const details = document.createElement('div');
+        const meta = document.createElement('span');
+        meta.style.cssText = 'font-size:.75rem;color:var(--accent-primary);font-weight:700;';
+        meta.textContent = `${item.subject} • Due: ${item.due_date}`;
+        const title = document.createElement('h4');
+        title.style.cssText = `font-size:1.05rem;margin-top:2px;${isDone ? 'text-decoration:line-through;opacity:.7;' : ''}`;
+        title.textContent = item.title;
+        details.append(meta, title);
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn';
+        button.style.cssText = 'padding:6px 12px;font-size:.8rem;';
+        button.textContent = isDone ? '↩ Mark Not Done' : '✓ Mark Done';
+        button.addEventListener('click', () => toggleAssignmentStatus(item.id, !isDone));
+        div.append(details, button);
+        container.appendChild(div);
+      });
+    }
+
+    async function toggleAssignmentStatus(assignmentId, markDone) {
+      if (!currentStudent) return;
+      const assignment = currentAssignments.find(item => item.id === assignmentId);
+      if (!assignment) return;
+
+      const { error } = await supabaseClient.from('student_updates').insert([{
+        student_code: currentStudent.student_code,
+        student_name: currentStudent.student_name,
+        assignment_id: assignmentId,
+        assignment_title: assignment.title,
+        status: markDone ? 'Completed' : 'Not Completed'
+      }]);
+      if (error) return alert('Could not update homework status: ' + error.message);
+      await initClassroom();
+    }
+
+    async function sendNoteToTeacher() {
+      const note = document.getElementById('studentUpdateNote').value.trim();
+      if (!note || !currentStudent) return alert('Please write a message first.');
+
+      const { error } = await supabaseClient.from('student_updates').insert([{
+        student_code: currentStudent.student_code,
+        student_name: currentStudent.student_name,
+        status: 'Student Note',
+        student_note: note
+      }]);
+
+      if (error) return alert('Error: ' + error.message);
+      document.getElementById('studentUpdateNote').value = '';
+      alert('✅ Sent to your teacher!');
+    }
+
+    if (window.PULSE_CURRENT_STUDENT) initClassroom();
+    else window.addEventListener('pulseStudentReady', initClassroom, { once: true });
+  </script>
+  <script src="navigation.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE — Digital Notes & Library</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .notes-toolbar {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 768px) {
+      .notes-toolbar {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-field {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .note-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .note-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+    .note-card.pinned {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 1px var(--accent-primary);
+    }
+    .subject-tag {
+      display: inline-block;
+      background: rgba(59, 130, 246, 0.12);
+      color: var(--accent-primary);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .note-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .icon-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button><div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <!-- Navigation Sidebar -->
+    <sidebar id="aurawaySidebar" aria-label="Main navigation">
+      <div class="logo-area">PULSE</div>
+      <ul class="nav-links" id="aurawayNavLinks">
+<li><a href="index.html">📊 Dashboard</a></li><li><a href="planner.html">📅 Study Planner</a></li><li><a href="timetable.html">🗓️ Timetable</a></li><li><a href="exam.html">🎯 Exams</a></li><li><a href="marks.html">📈 Marks Manager</a></li><li><a href="attendance.html">📋 Attendance</a></li><li><a href="flashcards.html">🗂️ Flashcards</a></li><li><a href="classroom.html">🎓 Classroom</a></li><li><a href="focus.html">⏱️ Focus Centre</a></li><li><a href="notes.html">📝 Digital Notes</a></li><li><a href="wellness.html">🌱 Wellness</a></li><li><a href="progress.html">🏆 Progress</a></li><li><a href="search.html">🔍 Search</a></li><li><a href="settings.html">⚙️ Settings</a></li></ul>
+      <button class="btn" id="themeToggle" style="margin-top: auto;">Toggle Theme</button>
+    </sidebar>
+
+    <!-- Main Content -->
+    <main>
+      <div class="header-bar">
+        <div class="welcome-title">
+          <h1>Digital Notes & Library 📝</h1>
+          <p>Create, organize, and pin your subject notes with offline access.</p>
+        </div>
+      </div>
+
+      <!-- Create Note Card -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3>Create New Note</h3>
+        <form id="noteForm" class="note-form" style="margin-top: 14px;">
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+            <input type="text" id="noteTitle" class="input-field" placeholder="Note title (e.g. Newton's Laws Summary)" required>
+            <select id="noteSubject" class="input-field">
+              <option value="Mathematics">Mathematics</option>
+              <option value="Physics">Physics</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Social Science">Social Science</option>
+              <option value="English">English</option>
+            </select>
+          </div>
+          <textarea id="noteContent" class="input-field" rows="3" placeholder="Write your key points, formulas, or revision summary here..." required></textarea>
+          <div>
+            <button type="submit" class="btn">Save Note</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Search & Filter Toolbar -->
+      <div class="notes-toolbar">
+        <input type="text" id="searchInput" class="input-field" placeholder="🔍 Search notes by title or keyword...">
+        <select id="filterSubject" class="input-field">
+          <option value="All">All Subjects</option>
+          <option value="Mathematics">Mathematics</option>
+          <option value="Physics">Physics</option>
+          <option value="Chemistry">Chemistry</option>
+          <option value="Social Science">Social Science</option>
+          <option value="English">English</option>
+        </select>
+      </div>
+
+      <!-- Notes Grid -->
+      <div id="notesGrid" class="notes-grid">
+        <!-- Notes injected dynamically via JS -->
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = html.getAttribute('data-theme');
+      html.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    // Notes Management Logic with LocalStorage
+    const noteForm = document.getElementById('noteForm');
+    const notesGrid = document.getElementById('notesGrid');
+    const searchInput = document.getElementById('searchInput');
+    const filterSubject = document.getElementById('filterSubject');
+
+    let notes = JSON.parse(localStorage.getItem('auraway_notes')) || [
+      {
+        id: 1,
+        title: 'Quadratic Equations Formula',
+        subject: 'Mathematics',
+        content: 'Standard form: ax² + bx + c = 0. Roots given by x = (-b ± √(b² - 4ac)) / 2a.',
+        date: '2026-11-12',
+        pinned: true
+      },
+      {
+        id: 2,
+        title: 'Laws of Thermodynamics',
+        subject: 'Physics',
+        content: 'First Law: Energy cannot be created or destroyed, only transformed from one form to another.',
+        date: '2026-11-10',
+        pinned: false
+      }
+    ];
+
+    function saveAndRenderNotes() {
+      localStorage.setItem('auraway_notes', JSON.stringify(notes));
+      renderNotes();
+    }
+
+    function renderNotes() {
+      const query = searchInput.value.toLowerCase();
+      const selectedSubject = filterSubject.value;
+
+      // Sort pinned notes to the top
+      const sortedNotes = [...notes].sort((a, b) => Number(b.pinned) - Number(a.pinned));
+
+      const filteredNotes = sortedNotes.filter(note => {
+        const matchesSearch = note.title.toLowerCase().includes(query) || note.content.toLowerCase().includes(query);
+        const matchesSubject = selectedSubject === 'All' || note.subject === selectedSubject;
+        return matchesSearch && matchesSubject;
+      });
+
+      notesGrid.innerHTML = '';
+
+      if (filteredNotes.length === 0) {
+        notesGrid.innerHTML = '<p style="color: var(--text-secondary); grid-column: 1 / -1; text-align: center; padding: 30px;">No notes found matching your filter.</p>';
+        return;
+      }
+
+      filteredNotes.forEach(note => {
+        const card = document.createElement('div');
+        card.className = `note-card ${note.pinned ? 'pinned' : ''}`;
+        card.innerHTML = `
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <span class="subject-tag">${note.subject}</span>
+              <button class="icon-btn" onclick="togglePin(${note.id})" title="${note.pinned ? 'Unpin note' : 'Pin note'}">
+                ${note.pinned ? '📌' : '📍'}
+              </button>
+            </div>
+            <h4 style="font-size: 1.05rem; margin-bottom: 8px;">${note.title}</h4>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; white-space: pre-line;">${note.content}</p>
+          </div>
+          <div class="note-actions">
+            <span>${note.date}</span>
+            <button class="icon-btn" onclick="deleteNote(${note.id})" style="color: #ef4444;" title="Delete note">🗑️</button>
+          </div>
+        `;
+        notesGrid.appendChild(card);
+      });
+    }
+
+    noteForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const today = new Date().toISOString().split('T')[0];
+      const newNote = {
+        id: Date.now(),
+        title: document.getElementById('noteTitle').value,
+        subject: document.getElementById('noteSubject').value,
+        content: document.getElementById('noteContent').value,
+        date: today,
+        pinned: false
+      };
+      notes.unshift(newNote);
+      saveAndRenderNotes();
+      noteForm.reset();
+    });
+
+    window.togglePin = function(id) {
+      notes = notes.map(n => n.id === id ? { ...n, pinned: !n.pinned } : n);
+      saveAndRenderNotes();
+    };
+
+    window.deleteNote = function(id) {
+      notes = notes.filter(n => n.id !== id);
+      saveAndRenderNotes();
+    };
+
+    searchInput.addEventListener('input', renderNotes);
+    filterSubject.addEventListener('change', renderNotes);
+
+    renderNotes();
+  </script>
+  <script src="navigation.js" defer></script>
+</body>
+</html>
