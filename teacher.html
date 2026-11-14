@@ -53,26 +53,34 @@
       </div>
     </div>
   </section>
-  <div class="standalone-wrap" id="teacherPortalContent" style="display:none;">
-    <div class="header-bar" style="margin-bottom: 24px;">
+  <div class="app-container" id="teacherAppContainer" style="display:none;">
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="aurawaySidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+    <div class="menu-backdrop" id="menuBackdrop" hidden></div>
+    <sidebar id="aurawaySidebar" aria-label="Teacher navigation">
+      <div class="logo-area">PULSE</div>
+      <nav aria-label="Teacher portal navigation">
+        <ul class="nav-links">
+          <li><a href="#teacherCommandCenter">🏠 <span>Overview</span></a></li>
+          <li><a href="#teacherStudentsSection">👥 <span>Students</span></a></li>
+          <li><a href="#teacherAttendanceManager">📋 <span>Attendance</span></a></li>
+          <li><a href="#teacherMarksSection">📝 <span>Marks</span></a></li>
+          <li><a href="#teacherAssignmentsSection">📚 <span>Assignments</span></a></li>
+          <li><a href="#teacherActivitySection">🔔 <span>Activity</span></a></li>
+          <li><a href="#teacherAnalyticsSection">📊 <span>Analytics</span></a></li>
+        </ul>
+      </nav>
+      <button class="btn" id="teacherSignOut" style="margin-top:18px;background:#64748b;">Sign out</button>
+    </sidebar>
+    <main class="standalone-wrap" id="teacherPortalContent" style="display:none;">
+    <div class="header-bar" id="teacherTop" style="margin-bottom: 24px;">
       <div class="welcome-title">
         <h1 id="teacherPortalHeading">PULSE — Teacher Portal 👩‍🏫</h1>
         <p>Generate student login codes, manage profiles, assign homework, and view student activity.</p>
-        <button class="btn" id="teacherSignOut" style="background:#64748b;">Sign out</button>
       </div>
       <button class="btn" id="themeToggle">Theme</button>
     </div>
 
-    <nav class="portal-section-nav" aria-label="Teacher portal sections" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px;">
-      <button type="button" class="btn" onclick="document.getElementById('teacherStudentsSection').scrollIntoView({behavior:'smooth'})">👥 Students</button>
-      <button type="button" class="btn" onclick="document.getElementById('teacherAttendanceManager').scrollIntoView({behavior:'smooth'})">📋 Attendance</button>
-      <button type="button" class="btn" onclick="document.getElementById('teacherMarksSection').scrollIntoView({behavior:'smooth'})">📝 Marks</button>
-      <button type="button" class="btn" style="background:#0f766e;" onclick="document.getElementById('teacherAssignmentsSection').scrollIntoView({behavior:'smooth'})">📚 Assignments</button>
-      <button type="button" class="btn" onclick="document.getElementById('teacherActivitySection').scrollIntoView({behavior:'smooth'})">🔔 Activity</button>
-      <button type="button" class="btn" onclick="document.getElementById('teacherAnalyticsSection').scrollIntoView({behavior:'smooth'})">📊 Analytics</button>
-    </nav>
-
-    <section class="teacher-command-center" aria-label="Teacher command center">
+    <section class="teacher-command-center" id="teacherCommandCenter" aria-label="Teacher command center">
       <div class="teacher-command-heading">
         <div><span class="teacher-eyebrow">OVERVIEW</span><h2>Teacher Command Center</h2><p>Your school workspace at a glance.</p></div>
         <span class="teacher-live-label"><span></span> Portal ready</span>
@@ -245,6 +253,7 @@
       </div>
     </div>
     </section>
+    </main>
   </div>
 
   <div id="studentPasswordModal" role="dialog" aria-modal="true" aria-labelledby="studentPasswordTitle" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:18px;">
@@ -273,6 +282,7 @@
       }
       const name = session.user.user_metadata?.display_name || 'Teacher';
       document.getElementById('teacherLoginPanel').style.display = 'none';
+      document.getElementById('teacherAppContainer').style.display = 'flex';
       document.getElementById('teacherPortalContent').style.display = 'block';
       document.getElementById('teacherPortalHeading').textContent = 'PULSE — ' + name;
       await loadStudentsRoster();
@@ -339,6 +349,18 @@
     })();
 
     const html = document.documentElement;
+    document.querySelectorAll('#aurawaySidebar .nav-links a').forEach(link => {
+      link.addEventListener('click', event => {
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) { event.preventDefault(); target.scrollIntoView({behavior:'smooth',block:'start'}); }
+        if (window.matchMedia('(max-width: 767px)').matches) {
+          document.body.classList.remove('sidebar-open');
+          document.body.classList.add('sidebar-collapsed');
+          document.getElementById('menuToggle').setAttribute('aria-expanded','false');
+          document.getElementById('menuBackdrop').hidden = true;
+        }
+      });
+    });
     html.setAttribute('data-theme', localStorage.getItem('auraway_theme') || 'dark');
     document.getElementById('themeToggle').addEventListener('click', () => {
       const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
@@ -971,5 +993,6 @@
     });
 
   </script>
+  <script src="navigation.js" defer></script>
 </body>
 </html>
