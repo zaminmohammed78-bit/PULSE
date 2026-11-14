@@ -8,6 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PULSE — Student Productivity Dashboard</title>
   <link rel="stylesheet" href="style.css?v=20261114-nav2">
+  <style>
+    .pulse-school-snapshot{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 24px}
+    .pulse-school-snapshot .snapshot-item{min-width:0;padding:14px 16px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-primary)}
+    .pulse-school-snapshot .snapshot-label{display:block;color:var(--text-secondary);font-size:.78rem;margin-bottom:6px}
+    .pulse-school-snapshot .snapshot-value{font-size:1.15rem;font-weight:750;overflow-wrap:anywhere}
+    .pulse-school-snapshot .snapshot-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .pulse-school-snapshot .snapshot-link{color:var(--accent-primary);font-weight:650;text-decoration:none}
+    .pulse-school-snapshot .snapshot-link:hover{text-decoration:underline}
+  </style>
 </head>
 <body class="pulse-student-portal">
   <div class="app-container">
@@ -56,6 +65,23 @@
         </div>
         <button class="btn student-theme-toggle" id="themeToggle" type="button" aria-label="Switch between dark and light theme">☀ Switch theme</button>
       </div>
+
+      <section class="card pulse-school-snapshot" aria-labelledby="schoolSnapshotTitle">
+        <div style="grid-column:1/-1;">
+          <div class="snapshot-heading">
+            <div>
+              <h2 id="schoolSnapshotTitle" style="font-size:1.05rem;">My School Snapshot</h2>
+              <p style="color:var(--text-secondary);font-size:.82rem;margin-top:3px;">Your school profile at a glance</p>
+            </div>
+            <a class="snapshot-link" href="analytics.html">View academic analytics →</a>
+          </div>
+          <div class="pulse-school-snapshot" style="margin:0;">
+            <div class="snapshot-item"><span class="snapshot-label">Class</span><span class="snapshot-value" id="snapshotClass">—</span></div>
+            <div class="snapshot-item"><span class="snapshot-label">Recorded attendance</span><span class="snapshot-value" id="snapshotAttendance">—</span></div>
+            <div class="snapshot-item"><span class="snapshot-label">Study hours on profile</span><span class="snapshot-value" id="snapshotStudyHours">—</span></div>
+          </div>
+        </div>
+      </section>
 
       <!-- Real Live Stats Grid -->
       <div class="grid-cards" id="statsSection">
@@ -175,6 +201,11 @@
     );
     const profileName = studentProfile?.student_name || 'Student';
     document.getElementById('greetingText').textContent = `${greeting}, ${profileName}! 👋`;
+    // School snapshot uses only the signed-in student's existing profile fields.
+    // Official attendance and examination charts remain in Academic Analytics.
+    document.getElementById('snapshotClass').textContent = studentProfile?.class_name || 'Not recorded';
+    document.getElementById('snapshotAttendance').textContent = studentProfile?.attendance_pct || 'Not recorded';
+    document.getElementById('snapshotStudyHours').textContent = studentProfile?.study_hours || 'Not recorded';
 
     // Load Real Data from LocalStorage
     const tasks = JSON.parse(localStorage.getItem('auraway_tasks')) || [];
