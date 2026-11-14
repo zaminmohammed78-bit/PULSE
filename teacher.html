@@ -48,6 +48,7 @@
       <button type="button" class="btn" onclick="document.getElementById('teacherAttendanceManager').scrollIntoView({behavior:'smooth'})">📋 Attendance</button>
       <button type="button" class="btn" style="background:#0f766e;" onclick="document.getElementById('teacherAssignmentsSection').scrollIntoView({behavior:'smooth'})">📚 Assignments</button>
       <button type="button" class="btn" onclick="document.getElementById('teacherActivitySection').scrollIntoView({behavior:'smooth'})">🔔 Activity</button>
+      <button type="button" class="btn" onclick="document.getElementById('teacherAnalyticsSection').scrollIntoView({behavior:'smooth'})">📊 Analytics</button>
     </nav>
 
     <div id="teacherStudentsSection">
@@ -107,6 +108,24 @@
       <button type="button" class="btn" id="saveClassAttendance" style="margin-top:12px;display:none;background:#059669;">Save Class Attendance</button>
       <p id="attendanceSaveMessage" role="status" style="margin-top:10px;"></p>
     </div>
+
+
+    <section id="teacherAnalyticsSection" class="card" style="margin:0 0 20px;" aria-labelledby="teacherAnalyticsHeading">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div><h3 id="teacherAnalyticsHeading">📊 Class Analytics</h3><p style="color:var(--text-secondary);font-size:.85rem;margin-top:4px;">Attendance and assignment progress across your registered students.</p></div>
+        <button type="button" class="btn" id="refreshTeacherAnalytics" style="padding:7px 12px;">Refresh</button>
+      </div>
+      <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr));margin-top:14px;">
+        <div class="stat-box"><small style="color:var(--text-secondary);">Attendance rate</small><h2 id="teacherAnalyticsAttendance">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">Assignment completion</small><h2 id="teacherAnalyticsCompletion">—</h2></div>
+        <div class="stat-box"><small style="color:var(--text-secondary);">Students tracked</small><h2 id="teacherAnalyticsStudents">—</h2></div>
+      </div>
+      <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));margin-top:14px;">
+        <div class="stat-box"><h4>Attendance by class</h4><canvas id="teacherAttendanceChart" height="220" style="display:block;width:100%;height:220px;margin-top:10px;" role="img" aria-label="Attendance rate by class"></canvas></div>
+        <div class="stat-box"><h4>Assignment completion by class</h4><canvas id="teacherAssignmentChart" height="220" style="display:block;width:100%;height:220px;margin-top:10px;" role="img" aria-label="Assignment completion rate by class"></canvas></div>
+      </div>
+      <p id="teacherAnalyticsMessage" role="status" style="color:var(--text-secondary);font-size:.85rem;margin-top:12px;">Loading class analytics…</p>
+    </section>
 
     <section id="teacherActivitySection">
     <!-- Live Student Updates -->
@@ -168,6 +187,7 @@
       document.getElementById('teacherPortalContent').style.display = 'block';
       document.getElementById('teacherPortalHeading').textContent = 'PULSE — ' + name;
       await loadStudentsRoster();
+      await loadTeacherAnalytics();
       loadStudentActivity();
       loadAssignmentOverview();
     }
@@ -484,6 +504,67 @@
     }
 
     document.getElementById('refreshAssignmentStatus').addEventListener('click', loadAssignmentOverview);
+
+
+    function drawTeacherClassChart(canvasId, labels, values, color) {
+      const canvas = document.getElementById(canvasId); if (!canvas) return;
+      const width = canvas.clientWidth || 300, height = 220, dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,width,height);
+      const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#9ca3af';
+      if (!labels.length) { ctx.fillStyle=textColor; ctx.font='13px system-ui'; ctx.textAlign='center'; ctx.fillText('No class data yet',width/2,110); return; }
+      const left=34,right=10,top=12,bottom=42,plotH=height-top-bottom,slot=(width-left-right)/labels.length,bw=Math.min(38,slot*.55);
+      ctx.font='11px system-ui'; ctx.textAlign='right'; ctx.fillStyle=textColor;
+      [0,25,50,75,100].forEach(v=>{const y=top+plotH*(1-v/100);ctx.globalAlpha=.2;ctx.strokeStyle=textColor;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(width-right,y);ctx.stroke();ctx.globalAlpha=1;ctx.fillText(v+'%',left-6,y+4);});
+      values.forEach((v,i)=>{const x=left+i*slot+(slot-bw)/2,bh=plotH*Math.max(0,Math.min(100,v))/100;ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,top+plotH-bh,bw,bh,5);ctx.fill();ctx.fillStyle=textColor;ctx.textAlign='center';ctx.fillText(labels[i].length>10?labels[i].slice(0,9)+'…':labels[i],x+bw/2,height-20);ctx.fillText(Math.round(v)+'%',x+bw/2,Math.max(10,top+plotH-bh-6));});
+    }
+    async function loadTeacherAnalytics() {
+      const message=document.getElementById('teacherAnalyticsMessage');
+      if(!supabaseClient||!allStudents.length){
+        document.getElementById('teacherAnalyticsAttendance').textContent='—';
+        document.getElementById('teacherAnalyticsCompletion').textContent='—';
+        document.getElementById('teacherAnalyticsStudents').textContent=allStudents.length;
+        message.textContent=allStudents.length?'Analytics service unavailable.':'Add students to start seeing class analytics.';
+        drawTeacherClassChart('teacherAttendanceChart',[],[],'#10b981');
+        drawTeacherClassChart('teacherAssignmentChart',[],[],'#6366f1');
+        return;
+      }
+      const codes=allStudents.map(s=>s.student_code);
+      const [attendanceResult,assignmentResult,updatesResult]=await Promise.all([
+        supabaseClient.from('attendance_records').select('student_code,status').in('student_code',codes).limit(2000),
+        supabaseClient.from('assignments').select('id,target_code'),
+        supabaseClient.from('student_updates').select('assignment_id,student_code,status,updated_at').in('status',['Completed','Not Completed']).order('updated_at',{ascending:false}).limit(5000)
+      ]);
+      const error=attendanceResult.error||assignmentResult.error||updatesResult.error;
+      if(error){message.textContent='Could not load analytics. Check teacher data permissions and refresh. '+error.message;return;}
+      const attendance=attendanceResult.data||[], assignments=assignmentResult.data||[], updates=updatesResult.data||[];
+      const latest=new Map();updates.forEach(u=>{const k=u.assignment_id+':'+u.student_code;if(!latest.has(k))latest.set(k,u.status);});
+      let totalPresent=0,totalAttendance=0,totalTargets=0,totalDone=0;
+      const classes=[...new Set(allStudents.map(s=>s.class_name).filter(Boolean))].sort();
+      const attendanceRates=[],completionRates=[];
+      classes.forEach(className=>{
+        const students=allStudents.filter(s=>s.class_name===className),classCodes=new Set(students.map(s=>s.student_code));
+        const records=attendance.filter(r=>classCodes.has(r.student_code));
+        const present=records.filter(r=>String(r.status).toLowerCase()==='present').length;
+        const aRate=records.length?present/records.length*100:0;
+        let targets=0,done=0;
+        assignments.forEach(a=>students.forEach(s=>{
+          if(a.target_code==='ALL'||a.target_code==='CLASS:'+className||a.target_code===s.student_code){
+            targets++;if(latest.get(a.id+':'+s.student_code)==='Completed')done++;
+          }
+        }));
+        attendanceRates.push(aRate);completionRates.push(targets?done/targets*100:0);
+        totalPresent+=present;totalAttendance+=records.length;totalTargets+=targets;totalDone+=done;
+      });
+      document.getElementById('teacherAnalyticsAttendance').textContent=totalAttendance?Math.round(totalPresent/totalAttendance*100)+'%':'—';
+      document.getElementById('teacherAnalyticsCompletion').textContent=totalTargets?Math.round(totalDone/totalTargets*100)+'%':'—';
+      document.getElementById('teacherAnalyticsStudents').textContent=allStudents.length;
+      drawTeacherClassChart('teacherAttendanceChart',classes,attendanceRates,'#10b981');
+      drawTeacherClassChart('teacherAssignmentChart',classes,completionRates,'#6366f1');
+      message.textContent=totalAttendance?'Based on '+totalAttendance+' saved attendance records and '+totalTargets+' assigned student-work items.':'No attendance records yet. Save class attendance to populate the chart.';
+    }
+    document.getElementById('refreshTeacherAnalytics').addEventListener('click',loadTeacherAnalytics);
+    window.addEventListener('resize',()=>{if(document.getElementById('teacherAnalyticsSection'))loadTeacherAnalytics();});
 
     async function loadStudentActivity() {
       const feed = document.getElementById('studentActivityFeed');
