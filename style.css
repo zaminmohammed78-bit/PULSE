@@ -404,3 +404,21 @@ html[data-theme="dark"] .pulse-student-portal .nav-group-label{color:#827c96}htm
 /* Student theme switcher stays visible in the dashboard header on every screen */
 .pulse-student-portal .student-theme-toggle{flex:0 0 auto;white-space:nowrap;min-height:40px;padding:9px 14px;}
 @media(max-width:767px){.pulse-student-portal .header-bar{align-items:center;gap:10px}.pulse-student-portal .student-theme-toggle{font-size:.78rem;padding:8px 10px;min-height:38px}}
+
+/* Student sidebar: compact searchable accordion navigation */
+.pulse-student-portal .student-nav-tools{margin:0 0 14px}
+.pulse-student-portal .student-nav-search-label{display:block;margin:0 4px 6px;color:var(--text-secondary);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.pulse-student-portal .student-nav-search{width:100%;min-height:40px;padding:9px 12px;border-radius:11px;background:rgba(255,255,255,.045);border:1px solid var(--pulse-line);color:var(--text-primary)}
+.pulse-student-portal .student-nav-groups{display:flex;flex-direction:column;gap:8px;flex:1;min-height:0}
+.pulse-student-portal .student-nav-group{border:1px solid var(--pulse-line);border-radius:13px;background:rgba(255,255,255,.025);overflow:hidden}
+.pulse-student-portal .student-nav-group[hidden],.pulse-student-portal .student-nav-group li[hidden]{display:none!important}
+.pulse-student-portal .student-nav-group summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 12px;cursor:pointer;list-style:none;color:var(--text-primary);font-size:.86rem;font-weight:700}
+.pulse-student-portal .student-nav-group summary::-webkit-details-marker{display:none}
+.pulse-student-portal .student-nav-group summary:after{content:'⌄';color:var(--text-secondary);transition:transform .2s ease}
+.pulse-student-portal .student-nav-group[open] summary:after{transform:rotate(180deg)}
+.pulse-student-portal .nav-count{margin-left:auto;margin-right:5px;color:var(--text-secondary);font-size:.72rem;font-weight:600}
+.pulse-student-portal .student-nav-group ul{list-style:none;margin:0;padding:0 7px 7px}
+.pulse-student-portal .student-nav-group li{margin:2px 0}
+.pulse-student-portal .student-nav-group a{min-height:40px;padding:9px 10px;font-size:.84rem}
+.pulse-student-portal .student-nav-group a.active{color:var(--text-primary);background:linear-gradient(100deg,rgba(174,126,255,.2),rgba(174,126,255,.075));border-color:rgba(190,155,255,.2)}
+@media(max-width:767px){.pulse-student-portal .student-nav-tools{margin-bottom:12px}.pulse-student-portal .student-nav-group summary{padding:13px 12px}.pulse-student-portal .student-nav-group a{min-height:44px}}
