@@ -15,7 +15,7 @@
     .hw-row { padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
-<body>
+<body class="pulse-parent-portal">
   <div class="standalone-wrap">
     <div class="header-bar" style="margin-bottom: 24px;">
       <div class="welcome-title">
@@ -25,10 +25,10 @@
       <button class="btn" id="themeToggle">Theme</button>
     </div>
 
-    <div class="card" style="margin-bottom: 20px;">
+    <div class="card parent-access-card" style="margin-bottom: 20px;">
       <h3>🔑 Enter Your Child's Student Code</h3>
       <p style="font-size:0.85rem; color:var(--text-secondary); margin: 6px 0 12px;">Use the access code issued by your child's teacher.</p>
-      <div style="display:flex; gap:8px;">
+      <div class="parent-access-form">
         <input type="text" id="parentCodeInput" class="input-field" placeholder="e.g. CLASS8A-4921" style="text-transform:uppercase;">
         <button class="btn" onclick="loadParentView()">View Report</button>
       </div>
