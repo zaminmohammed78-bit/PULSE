@@ -6,7 +6,15 @@ const SUPABASE_ANON_KEY = 'sb_publishable_sbS10vHYIrxhHsqnQNoWgA_WzREJj_-';
 // Keep browser sessions for 7 days. Supabase refreshes active sessions automatically;
 // each refreshed save renews this window. Signing out still removes the session immediately.
 const PULSE_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const PULSE_AUTH_STORAGE_KEY = 'sb-iazlemocpuhzwtrkyfgw-auth-token';
+// Keep each portal's session separate so opening the Teacher portal cannot
+// sign out the Student portal (and vice versa) in the same browser.
+const PULSE_PORTAL_ROLE = (() => {
+  const page = window.location.pathname.split('/').pop().toLowerCase();
+  if (page === 'teacher.html') return 'teacher';
+  if (page === 'parent.html') return 'parent';
+  return 'student';
+})();
+const PULSE_AUTH_STORAGE_KEY = 'sb-iazlemocpuhzwtrkyfgw-' + PULSE_PORTAL_ROLE + '-auth-token';
 
 const pulseSessionStorage = {
   getItem(key) {
