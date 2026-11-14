@@ -90,14 +90,14 @@
     let charts=[];
     function redraw(){charts.forEach(c=>drawBars(document.getElementById(c.id),c.labels,c.values,c.colors));}
     async function loadAnalytics(){
-      const code=localStorage.getItem('auraway_student_code');
-      if(!code||!supabaseClient)return;
-      const profile=JSON.parse(localStorage.getItem('auraway_student_profile')||'null');
+      const profile=window.PULSE_CURRENT_STUDENT;
+      const code=profile?.student_code;
+      if(!code||!profile||!supabaseClient)return;
       document.getElementById('analyticsStudentName').textContent=(profile?.student_name||'Student')+' · Your personal progress';
       const [attendanceResult,assignmentResult,updatesResult]=await Promise.all([
-        supabaseClient.rpc('get_student_attendance',{p_student_code:code}),
+        supabaseClient.from('attendance_records').select('attendance_date,status').eq('student_code',code).order('attendance_date',{ascending:false}).limit(365),
         supabaseClient.from('assignments').select('id,title,target_code,due_date').order('due_date',{ascending:true}),
-        supabaseClient.rpc('get_student_updates_by_code',{p_student_code:code})
+        supabaseClient.from('student_updates').select('assignment_id,status,updated_at').eq('student_code',code).order('updated_at',{ascending:false})
       ]);
       const errors=[attendanceResult.error,assignmentResult.error,updatesResult.error].filter(Boolean);
       if(errors.length){document.getElementById('attendanceMessage').textContent='Some analytics could not load. Please refresh or ask your teacher to check access settings.';document.getElementById('assignmentMessage').textContent='Data access needs to be checked.';return;}
@@ -120,7 +120,8 @@
       redraw();
     }
     window.addEventListener('resize',redraw);
-    loadAnalytics();
+    if(window.PULSE_CURRENT_STUDENT) loadAnalytics();
+    else window.addEventListener('pulseStudentReady',loadAnalytics,{once:true});
   </script>
   <script src="navigation.js" defer></script>
 </body>
