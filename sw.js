@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pulse-pwa-v1';
+const CACHE_NAME = 'pulse-pwa-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -23,41 +23,43 @@ const ASSETS_TO_CACHE = [
   './navigation.js',
   './student-auth.js',
   './supabase.js',
+  './pwa-installer.js',
   './manifest.json',
   './pwa-icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+    ).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        fetch(event.request).then((networkResponse) => {
+        const refresh = fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
           }
         }).catch(() => {});
         return cachedResponse;
       }
-      return fetch(event.request);
+      return fetch(event.request).catch(() => {
+        if (event.request.mode === 'navigate') return caches.match('./portals.html');
+        throw new Error('PULSE is offline and this page is not cached.');
+      });
     })
   );
 });

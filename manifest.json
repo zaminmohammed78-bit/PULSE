@@ -1,8 +1,10 @@
 {
-  "name": "PULSE — Student Management for Schools",
+  "id": "./",
+  "name": "PULSE — School Management Platform",
   "short_name": "PULSE",
-  "description": "Student Productivity, Parent Insights, and Teacher Management Portal System",
-  "start_url": "./index.html",
+  "description": "Student, Parent, and Teacher portals in one school management app.",
+  "start_url": "./portals.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#101426",
