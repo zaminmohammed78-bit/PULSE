@@ -18,7 +18,7 @@
       <style>
         #pulsePortalSwitcher{position:fixed;right:16px;bottom:16px;z-index:11000;font-family:inherit}
         #pulsePortalSwitcher *{box-sizing:border-box}
-        #pulsePortalSwitcher .pulse-switch-trigger{display:flex;align-items:center;gap:9px;min-height:46px;padding:10px 15px;border:1px solid rgba(148,163,184,.3);border-radius:14px;background:#171d35;color:#fff;font:700 13px inherit;box-shadow:0 10px 32px rgba(0,0,0,.3);cursor:pointer}
+        #pulsePortalSwitcher .pulse-switch-trigger{display:flex;align-items:center;gap:9px;min-height:46px;padding:10px 15px;border:1px solid rgba(148,163,184,.3);border-radius:14px;background:#171d35;color:#fff;font:inherit;font-size:13px;font-weight:700;box-shadow:0 10px 32px rgba(0,0,0,.3);cursor:pointer}
         #pulsePortalSwitcher .pulse-switch-trigger:focus-visible,#pulsePortalSwitcher a:focus-visible{outline:3px solid #38bdf8;outline-offset:3px}
         #pulsePortalSwitcher .pulse-switch-trigger .pulse-switch-chevron{font-size:11px;opacity:.75}
         #pulsePortalSwitcher .pulse-switch-menu{position:absolute;right:0;bottom:56px;width:min(260px,calc(100vw - 32px));padding:9px;border:1px solid rgba(148,163,184,.25);border-radius:16px;background:#151b30;box-shadow:0 18px 48px rgba(0,0,0,.38);display:none}
